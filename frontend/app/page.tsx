@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { Activity, Database, Server, Cpu, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, PlusCircle, LayoutDashboard, Shield } from "lucide-react";
 
 interface ServiceStatus {
@@ -10,6 +11,9 @@ interface ServiceStatus {
   url: string;
   details?: string;
 }
+
+const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+const isClerkConfigured = clerkKey.startsWith("pk_") && !clerkKey.includes("placeholder");
 
 export default function Home() {
   const [backendStatus, setBackendStatus] = useState<ServiceStatus>({
@@ -116,14 +120,44 @@ export default function Home() {
           </div>
         </div>
 
-        <button 
-          onClick={checkHealth}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium hover:text-white transition disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          Refresh Connection
-        </button>
+        <div className="flex items-center gap-3">
+          {isClerkConfigured ? (
+            <>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium hover:text-white transition">
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition">
+                    Sign up
+                  </button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium hover:text-white transition">
+                Sign in
+              </Link>
+              <Link href="/register" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition">
+                Sign up
+              </Link>
+            </>
+          )}
+          <button
+            onClick={checkHealth}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium hover:text-white transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh Connection
+          </button>
+        </div>
       </header>
 
       {/* Hero Body */}
@@ -148,15 +182,15 @@ export default function Home() {
 
           {/* Quick links representation */}
           <div className="flex flex-wrap gap-4 mt-4">
-            <Link href="/login" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
+            <Link href="/citizen-dashboard" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
               <MessageSquare className="w-4 h-4 text-blue-400" />
               Citizen Portal
             </Link>
-            <Link href="/login" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
+            <Link href="/mp-dashboard" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
               <LayoutDashboard className="w-4 h-4 text-indigo-400" />
               MP Dashboard
             </Link>
-            <Link href="/login" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
+            <Link href="/admin-dashboard" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-3 cursor-pointer transition">
               <PlusCircle className="w-4 h-4 text-emerald-400" />
               Admin Control
             </Link>

@@ -2,6 +2,7 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../index";
 import { Role } from "@prisma/client";
+import { getRoleAssignment } from "../config/roleAssignments";
 
 export async function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers["authorization"];
@@ -25,32 +26,30 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
       where: { clerkId },
     });
 
+    const clerkUser = await clerkClient.users.getUser(clerkId);
+    const email = clerkUser.emailAddresses[0]?.emailAddress || null;
+    const phoneNumber = clerkUser.phoneNumbers[0]?.phoneNumber || null;
+    const fullName =
+      clerkUser.fullName ||
+      `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+      clerkUser.username ||
+      "Clerk User";
+    const roleAssignment = getRoleAssignment(email);
+    const metadataRole = clerkUser.publicMetadata?.role as Role;
+    const metadataRoleIsValid = Object.values(Role).includes(metadataRole);
+    const resolvedRole = roleAssignment?.role || (metadataRoleIsValid ? metadataRole : Role.CITIZEN);
+
     // Lazy sync: if user does not exist in local database, fetch from Clerk and insert
     if (!user) {
       console.log(`[Clerk Auth Sync] Syncing new user from Clerk: ${clerkId}`);
       try {
-        const clerkUser = await clerkClient.users.getUser(clerkId);
-        
-        // Extract details
-        const email = clerkUser.emailAddresses[0]?.emailAddress || null;
-        const phoneNumber = clerkUser.phoneNumbers[0]?.phoneNumber || null;
-        const fullName = 
-          clerkUser.fullName || 
-          `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || 
-          clerkUser.username || 
-          "Clerk User";
-          
-        // Read role from Clerk metadata if present, fallback to CITIZEN
-        const metadataRole = clerkUser.publicMetadata?.role as Role;
-        const role = Object.values(Role).includes(metadataRole) ? metadataRole : Role.CITIZEN;
-
         user = await prisma.user.create({
           data: {
             clerkId,
-            fullName,
+            fullName: roleAssignment?.name || fullName,
             email,
             phoneNumber,
-            role,
+            role: resolvedRole,
           },
         });
 
@@ -59,13 +58,32 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
           data: {
             userId: user.id,
             action: "CLERK_USER_SYNCED",
-            details: `Profile lazy-synced from Clerk. Role assigned: ${role}`,
+            details: `Profile lazy-synced from Clerk. Role assigned: ${resolvedRole}`,
           },
         });
       } catch (syncError: any) {
         console.error("[Clerk Auth Sync Error] Failed to fetch profile:", syncError.message);
         return res.status(500).json({ error: "Internal Server Error during user synchronization" });
       }
+    } else if (user.role !== resolvedRole) {
+      const previousRole = user.role;
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          role: resolvedRole,
+          fullName: roleAssignment?.name || user.fullName,
+          email: email || user.email,
+          phoneNumber: phoneNumber || user.phoneNumber,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "USER_ROLE_UPDATED",
+          details: `Role updated from ${previousRole} to ${resolvedRole} using Clerk metadata or roleAssignments.json`,
+        },
+      });
     }
 
     // Attach user information to request object

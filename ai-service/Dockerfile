@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including curl for Docker health checks)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -12,13 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy python dependencies
 COPY requirements.txt .
 
-# Install dependencies using CPU-only versions of PyTorch to reduce image size
+# Install dependencies using CPU-only PyTorch to reduce image size
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
-# Download default spaCy language model
-RUN python -m spacy download en_core_web_sm
+# Install spaCy English model directly from the versioned wheel URL.
+# Using pip install avoids the 'python -m spacy download' URL-construction bug
+# that produces a malformed path when spaCy cannot resolve its own version tag.
+RUN pip install --no-cache-dir \
+    https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
 # Copy service files
 COPY . .

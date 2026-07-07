@@ -1,20 +1,22 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+
+# Install curl for Docker health check and OpenSSL for Prisma engines
+RUN apk add --no-cache curl openssl
+
+# Install dependencies
+COPY package.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy source and generate Prisma client
 COPY . .
 RUN npx prisma generate --schema=src/prisma/schema.prisma
+
+# Build TypeScript
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --only=production
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/src/prisma ./src/prisma
 EXPOSE 5000
-CMD npx prisma db push --schema=src/prisma/schema.prisma && npx prisma db seed && node dist/index.js
+
+# Push schema to DB then start server
+# Seed is skipped in production (ts-node is a devDependency)
+CMD ["sh", "-c", "npx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && node dist/index.js"]

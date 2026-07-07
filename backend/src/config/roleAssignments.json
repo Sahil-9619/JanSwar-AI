@@ -1,0 +1,20 @@
+{
+  "instructions": "Add Clerk account emails here to control local JanSwar roles. Valid roles: CITIZEN, MP, DISTRICT_ADMIN, SUPER_ADMIN.",
+  "users": [
+    {
+      "email": "sahilkumar242004@gmail.com",
+      "role": "SUPER_ADMIN",
+      "name": "JanSwar Super Admin"
+    },
+    {
+      "email": "mp@example.com",
+      "role": "MP",
+      "name": "Demo MP User"
+    },
+    {
+      "email": "admin@example.com",
+      "role": "DISTRICT_ADMIN",
+      "name": "Demo District Admin"
+    }
+  ]
+}

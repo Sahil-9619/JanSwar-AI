@@ -271,11 +271,28 @@ async function triggerAIServicePipeline(suggestionId: string) {
     data: { status: SuggestionStatus.PROCESSING },
   });
 
-  // Call FastAPI microservice (we will build this API endpoint next)
+  // Call FastAPI microservice
   try {
+    const suggestion = await prisma.suggestion.findUnique({
+      where: { id: suggestionId },
+      include: { media: true, village: true },
+    });
+
+    const categories = await prisma.category.findMany({
+      select: { id: true, name: true }
+    });
+
     const response = await axios.post(`${AI_SERVICE_URL}/api/ai/process-suggestion`, {
       suggestionId: suggestionId,
+      title: suggestion?.title,
+      description: suggestion?.description,
+      media: suggestion?.media,
+      village: suggestion?.village,
+      categories: categories,
+      callbackUrl: `http://backend:5000/api/suggestions/${suggestionId}/ai-complete`,
+      internalSecret: process.env.INTERNAL_API_SECRET || "jan_swar_ai_secret_internal_microservice_communication_key_2026"
     });
+
     console.log(`[AI Ingestion Log] Microservice acknowledged suggestion: ${suggestionId}. Response:`, response.data);
   } catch (error: any) {
     console.error(`[AI Ingestion Log] Microservice request failed for suggestion: ${suggestionId}.`, error.message);
@@ -353,4 +370,75 @@ async function runMockAIPipeline(suggestionId: string) {
   });
 
   console.log(`[AI Ingestion Fallback] Pipeline completed. Priority Score generated: ${finalScore.toFixed(1)}`);
+}
+
+/**
+ * Endpoint called by the FastAPI service to write back analyzed results asynchronously
+ */
+export async function updateSuggestionAI(req: Request, res: Response) {
+  const { id } = req.params;
+  const {
+    transcription,
+    translatedText,
+    detectedLang,
+    sentiment,
+    categoryId,
+    priorityScore,
+  } = req.body;
+
+  try {
+    const suggestionExists = await prisma.suggestion.findUnique({
+      where: { id },
+    });
+
+    if (!suggestionExists) {
+      return res.status(404).json({ error: "Suggestion not found" });
+    }
+
+    // Update Suggestion fields
+    const updatedSuggestion = await prisma.suggestion.update({
+      where: { id },
+      data: {
+        transcription: transcription || null,
+        translatedText: translatedText || null,
+        detectedLang: detectedLang || "en",
+        sentiment: sentiment || "NEUTRAL",
+        categoryId: categoryId || null,
+        status: SuggestionStatus.ANALYZED,
+      },
+    });
+
+    // Create or update Priority Score
+    if (priorityScore) {
+      await prisma.priorityScore.upsert({
+        where: { suggestionId: id },
+        update: {
+          citizenDemandWeight: priorityScore.citizenDemandWeight || 0.0,
+          populationWeight: priorityScore.populationWeight || 0.0,
+          infrastructureGap: priorityScore.infrastructureGap || 0.0,
+          distanceWeight: priorityScore.distanceWeight || 0.0,
+          budgetWeight: priorityScore.budgetWeight || 0.0,
+          urgencyWeight: priorityScore.urgencyWeight || 0.0,
+          govPlanWeight: priorityScore.govPlanWeight || 0.0,
+          finalScore: priorityScore.finalScore || 0.0,
+        },
+        create: {
+          suggestionId: id,
+          citizenDemandWeight: priorityScore.citizenDemandWeight || 0.0,
+          populationWeight: priorityScore.populationWeight || 0.0,
+          infrastructureGap: priorityScore.infrastructureGap || 0.0,
+          distanceWeight: priorityScore.distanceWeight || 0.0,
+          budgetWeight: priorityScore.budgetWeight || 0.0,
+          urgencyWeight: priorityScore.urgencyWeight || 0.0,
+          govPlanWeight: priorityScore.govPlanWeight || 0.0,
+          finalScore: priorityScore.finalScore || 0.0,
+        },
+      });
+    }
+
+    res.status(200).json({ message: "Suggestion analysis synced successfully", suggestion: updatedSuggestion });
+  } catch (error: any) {
+    console.error("Update Suggestion AI Error:", error);
+    res.status(500).json({ error: "Internal Server Error syncing AI results" });
+  }
 }

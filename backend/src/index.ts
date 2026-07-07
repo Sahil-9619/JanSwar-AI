@@ -9,6 +9,10 @@ import authRouter from "./routes/auth";
 import suggestionsRouter from "./routes/suggestions";
 import categoriesRouter from "./routes/categories";
 import locationsRouter from "./routes/locations";
+import analyticsRouter from "./routes/analytics";
+import recommendationsRouter from "./routes/recommendations";
+import notificationsRouter from "./routes/notifications";
+import auditRouter from "./routes/audit";
 
 dotenv.config();
 
@@ -51,6 +55,19 @@ app.use("/api/auth", authRouter);
 app.use("/api/suggestions", suggestionsRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/locations", locationsRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/recommendations", recommendationsRouter);
+app.use("/api/notifications", notificationsRouter);
+app.use("/api/audit", auditRouter);
+
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    service: "janswar-backend",
+    status: "running",
+    health: "/api/health",
+    apiBase: "/api",
+  });
+});
 
 // Health check API
 app.get("/api/health", async (req: Request, res: Response) => {

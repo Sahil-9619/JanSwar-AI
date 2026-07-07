@@ -2,6 +2,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from app.routers.process import router as process_router
+from app.routers.cluster import router as cluster_router
 
 app = FastAPI(
     title="JanSwar AI - Constituency Intelligence AI Service",
@@ -18,9 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(process_router)
+app.include_router(cluster_router)
+
 class TranslationRequest(BaseModel):
     text: str
     target_lang: str = "en"
+
+@app.get("/")
+def root():
+    return {
+        "service": "janswar-ai-service",
+        "status": "running",
+        "health": "/health",
+        "docs": "/docs"
+    }
 
 @app.get("/health")
 def health_check():

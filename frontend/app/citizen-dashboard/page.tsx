@@ -86,6 +86,17 @@ export default function CitizenDashboard() {
     }
   }, [clerkUser, isClerkLoaded]);
 
+  // Client-side role redirection guard
+  useEffect(() => {
+    if (user) {
+      if (user.role === "MP") {
+        router.push("/mp-dashboard");
+      } else if (user.role === "DISTRICT_ADMIN" || user.role === "SUPER_ADMIN") {
+        router.push("/admin-dashboard");
+      }
+    }
+  }, [user, router]);
+
   const fetchSuggestions = async () => {
     setIsLoadingList(true);
     setListError(null);

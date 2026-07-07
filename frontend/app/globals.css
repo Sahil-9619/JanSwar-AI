@@ -60,11 +60,13 @@
 
 @layer base {
   * {
-    @apply border-border transition-colors duration-200;
+    @apply border-slate-200 dark:border-slate-800 transition-colors duration-200;
   }
   
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: 'Inter', sans-serif;
   }
 
@@ -74,18 +76,27 @@
 }
 
 /* Custom premium classes */
+/* NOTE: We use plain CSS here (no @apply with CSS-variable colours + opacity)
+   because Tailwind cannot compute opacity fractions on CSS-variable-based colours. */
 .glass-panel {
-  @apply backdrop-blur-md bg-opacity-70 border border-card-border;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   background-color: var(--card);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
 }
 
 .glass-panel-hover {
-  @apply hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-[2px];
+  transition: all 0.3s ease;
+}
+.glass-panel-hover:hover {
+  border-color: rgba(59, 130, 246, 0.3);  /* blue-500/30 */
+  box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.05);
+  transform: translateY(-2px);
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-blue-400 dark:from-primary-400 dark:to-blue-300;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -98,5 +109,9 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30;
+  background-color: rgba(100, 116, 139, 0.2);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.3);
 }
