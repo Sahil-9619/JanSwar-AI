@@ -235,8 +235,8 @@ export default function MPDashboard() {
       {/* Navigation */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-border relative z-10">
         <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-border bg-card/80 shadow-lg shadow-primary/10 flex items-center justify-center">
-            <Image src="/JS_logo.png" alt="JanSwar Logo" fill className="object-cover" priority />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-border bg-white p-0 shadow-lg shadow-primary/10 flex items-center justify-center">
+            <Image src="/JS_logo.png" alt="JanSwar Logo" fill className="object-contain scale-160" priority />
           </div>
           <div>
             <h1 className="font-extrabold text-lg text-foreground">

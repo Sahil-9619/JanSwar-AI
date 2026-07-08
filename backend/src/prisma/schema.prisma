@@ -1,10 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phoneNumber   String?        @unique
+  fullName      String
+  role          Role           @default(CITIZEN)
+  passwordHash  String?
+  city          String?
+  state         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  suggestions   Suggestion[]
+}
+
+model Category {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  recommendations Recommendation[]
+  suggestions     Suggestion[]
+}
+
+model District {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  state           String           @default("State")
+  blocks          Block[]
+  recommendations Recommendation[]
+  suggestions     Suggestion[]
+}
+
+model Block {
+  id              String           @id @default(uuid())
+  name            String
+  districtId      String
+  district        District         @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  recommendations Recommendation[]
+  suggestions     Suggestion[]
+  villages        Village[]
+
+  @@unique([name, districtId])
+}
+
+model Village {
+  id                 String           @id @default(uuid())
+  name               String
+  blockId            String
+  population         Int              @default(0)
+  infrastructureGap  Float            @default(0.0)
+  infrastructureInfo Infrastructure?
+  recommendations    Recommendation[]
+  suggestions        Suggestion[]
+  block              Block            @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@unique([name, blockId])
+}
+
+model Infrastructure {
+  id                String  @id @default(uuid())
+  villageId         String  @unique
+  roadQuality       Float   @default(0.5)
+  waterAccess       Float   @default(0.5)
+  electricityAccess Float   @default(0.5)
+  healthAccess      Float   @default(0.5)
+  educationAccess   Float   @default(0.5)
+  village           Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
+}
+
+model Suggestion {
+  id             String            @id @default(uuid())
+  title          String
+  description    String?
+  transcription  String?
+  detectedLang   String?           @default("en")
+  translatedText String?
+  sentiment      String?           @default("NEUTRAL")
+  status         SuggestionStatus  @default(PENDING)
+  userId         String
+  categoryId     String?
+  latitude       Float
+  longitude      Float
+  districtId     String?
+  blockId        String?
+  villageId      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  priorityScore  PriorityScore?
+  block          Block?            @relation(fields: [blockId], references: [id])
+  category       Category?         @relation(fields: [categoryId], references: [id])
+  district       District?         @relation(fields: [districtId], references: [id])
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  village        Village?          @relation(fields: [villageId], references: [id])
+  media          SuggestionMedia[]
+}
+
+model SuggestionMedia {
+  id           String     @id @default(uuid())
+  suggestionId String
+  mediaType    MediaType
+  url          String
+  publicId     String?
+  createdAt    DateTime   @default(now())
+  suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+}
+
+model PriorityScore {
+  id                  String     @id @default(uuid())
+  suggestionId        String     @unique
+  citizenDemandWeight Float      @default(0.0)
+  populationWeight    Float      @default(0.0)
+  infrastructureGap   Float      @default(0.0)
+  distanceWeight      Float      @default(0.0)
+  budgetWeight        Float      @default(0.0)
+  urgencyWeight       Float      @default(0.0)
+  govPlanWeight       Float      @default(0.0)
+  aiConfidence        Float      @default(0.9)
+  finalScore          Float      @default(0.0)
+  updatedAt           DateTime   @updatedAt
+  suggestion          Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  priorityScore Float
+  categoryId    String
+  districtId    String?
+  blockId       String?
+  villageId     String?
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  block         Block?    @relation(fields: [blockId], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  district      District? @relation(fields: [districtId], references: [id])
+  village       Village?  @relation(fields: [villageId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -27,171 +187,4 @@ enum MediaType {
   VOICE
   IMAGE
   DOCUMENT
-}
-
-model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  phoneNumber   String?        @unique
-  fullName      String
-  role          Role           @default(CITIZEN)
-  passwordHash  String?
-  city          String?
-  state         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  suggestions   Suggestion[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
-}
-
-model Category {
-  id              String           @id @default(uuid())
-  name            String           @unique
-  description     String?
-  suggestions     Suggestion[]
-  recommendations Recommendation[]
-}
-
-model District {
-  id              String           @id @default(uuid())
-  name            String           @unique
-  state           String           @default("State")
-  blocks          Block[]
-  suggestions     Suggestion[]
-  recommendations Recommendation[]
-}
-
-model Block {
-  id              String           @id @default(uuid())
-  name            String
-  districtId      String
-  district        District         @relation(fields: [districtId], references: [id], onDelete: Cascade)
-  villages        Village[]
-  suggestions     Suggestion[]
-  recommendations Recommendation[]
-
-  @@unique([name, districtId])
-}
-
-model Village {
-  id                 String           @id @default(uuid())
-  name               String
-  blockId            String
-  block              Block            @relation(fields: [blockId], references: [id], onDelete: Cascade)
-  population         Int              @default(0)
-  infrastructureGap  Float            @default(0.0) // 0 to 1 scale indicating gap (higher means worse infra)
-  suggestions        Suggestion[]
-  recommendations    Recommendation[]
-  infrastructureInfo Infrastructure?
-
-  @@unique([name, blockId])
-}
-
-model Infrastructure {
-  id                String  @id @default(uuid())
-  villageId         String  @unique
-  village           Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
-  roadQuality       Float   @default(0.5) // 0 to 1 scale (1 is excellent, 0 is no road)
-  waterAccess       Float   @default(0.5)
-  electricityAccess Float   @default(0.5)
-  healthAccess      Float   @default(0.5)
-  educationAccess   Float   @default(0.5)
-}
-
-model Suggestion {
-  id            String           @id @default(uuid())
-  title         String
-  description   String?
-  transcription String? // Whisper output text if voice
-  detectedLang  String?          @default("en")
-  translatedText String? // Text translated to English or target
-  sentiment     String?          @default("NEUTRAL") // POSITIVE, NEGATIVE, NEUTRAL
-  status        SuggestionStatus @default(PENDING)
-  userId        String
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoryId    String?
-  category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  
-  // Location elements
-  latitude      Float
-  longitude     Float
-  districtId    String?
-  district      District?        @relation(fields: [districtId], references: [id], onDelete: SetNull)
-  blockId       String?
-  block         Block?           @relation(fields: [blockId], references: [id], onDelete: SetNull)
-  villageId     String?
-  village       Village?         @relation(fields: [villageId], references: [id], onDelete: SetNull)
-  
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  media         SuggestionMedia[]
-  priorityScore PriorityScore?
-}
-
-model SuggestionMedia {
-  id           String     @id @default(uuid())
-  suggestionId String
-  suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
-  mediaType    MediaType
-  url          String
-  publicId     String? // Cloudinary public asset ID
-  createdAt    DateTime   @default(now())
-}
-
-model PriorityScore {
-  id                  String     @id @default(uuid())
-  suggestionId        String     @unique
-  suggestion          Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
-  citizenDemandWeight Float      @default(0.0) // Density of duplicates or search matches
-  populationWeight    Float      @default(0.0)
-  infrastructureGap   Float      @default(0.0)
-  distanceWeight      Float      @default(0.0)
-  budgetWeight        Float      @default(0.0)
-  urgencyWeight       Float      @default(0.0)
-  govPlanWeight       Float      @default(0.0)
-  aiConfidence        Float      @default(0.9)
-  finalScore          Float      @default(0.0) // Calculated priority 0 - 100
-  updatedAt           DateTime   @updatedAt
-}
-
-model Recommendation {
-  id            String   @id @default(uuid())
-  title         String
-  description   String
-  priorityScore Float
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  // Recommendation targets
-  districtId    String?
-  district      District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
-  blockId       String?
-  block         Block?    @relation(fields: [blockId], references: [id], onDelete: SetNull)
-  villageId     String?
-  village       Village?  @relation(fields: [villageId], references: [id], onDelete: SetNull)
-  
-  status        String   @default("PENDING") // PENDING, APPROVED, COMPLETED
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    String
-  details   String
-  timestamp DateTime @default(now())
 }

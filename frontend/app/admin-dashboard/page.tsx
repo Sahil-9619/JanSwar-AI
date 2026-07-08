@@ -228,8 +228,8 @@ export default function AdminDashboard() {
         <div className="max-w-[1600px] h-full mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative w-8 h-8 rounded-lg border border-primary/20 bg-white/5 p-0.5 flex items-center justify-center">
-                <Image src="/JS_logo.png" alt="Logo" fill className="object-contain" />
+              <div className="relative w-8 h-8 rounded-lg border border-primary/20 bg-white p-0 flex items-center justify-center overflow-hidden">
+                <Image src="/JS_logo.png" alt="Logo" fill className="object-contain scale-160" />
               </div>
               <span className="font-black text-base tracking-tight text-foreground flex items-center gap-1 select-none">
                 JanSwar <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">Admin</span>

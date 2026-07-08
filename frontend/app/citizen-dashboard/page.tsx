@@ -519,12 +519,12 @@ export default function CitizenDashboard() {
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative w-12 h-12 rounded-xl border border-primary/20 bg-white/5 p-1 shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center">
+              <div className="relative w-12 h-12 rounded-xl border border-primary/20 bg-white p-0 shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center overflow-hidden">
                 <Image
                   src="/JS_logo.png"
                   alt="JanSwar Logo"
                   fill
-                  className="object-contain"
+                  className="object-contain scale-160"
                   priority
                 />
               </div>

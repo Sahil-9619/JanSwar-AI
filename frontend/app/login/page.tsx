@@ -3,19 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore, Role } from "../../store/authStore";
-import { 
-  Loader2, 
-  Mail, 
-  KeyRound, 
-  User as UserIcon, 
-  Shield, 
-  Eye, 
-  EyeOff, 
-  Lock, 
-  MapPin, 
+import {
+  Loader2,
+  Mail,
+  KeyRound,
+  User as UserIcon,
+  Shield,
+  Eye,
+  EyeOff,
+  Lock,
+  MapPin,
   Building,
   ArrowRight,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { ThemeToggle } from "../../components/ThemeToggle";
@@ -27,15 +27,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function LoginPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const { 
-    login, 
-    signup, 
-    verifySignup, 
-    isLoading, 
-    error, 
-    clearError, 
-    user 
-  } = useAuthStore();
+  const { login, signup, verifySignup, isLoading, error, clearError, user } =
+    useAuthStore();
 
   // Mode state: LOGIN vs SIGNUP
   const [mode, setMode] = useState<"LOGIN" | "SIGNUP">("LOGIN");
@@ -62,7 +55,10 @@ export default function LoginPage() {
     if (user) {
       if (user.role === "MP") {
         router.push("/mp-dashboard");
-      } else if (user.role === "DISTRICT_ADMIN" || user.role === "SUPER_ADMIN") {
+      } else if (
+        user.role === "DISTRICT_ADMIN" ||
+        user.role === "SUPER_ADMIN"
+      ) {
         router.push("/admin-dashboard");
       } else {
         router.push("/citizen-dashboard");
@@ -101,7 +97,11 @@ export default function LoginPage() {
     if (!email || !password || !fullName || !city || !state) return;
 
     if (password !== confirmPassword) {
-      setLocalError(language === "hi" ? "दोनों पासवर्ड मेल नहीं खाते हैं" : "Passwords do not match");
+      setLocalError(
+        language === "hi"
+          ? "दोनों पासवर्ड मेल नहीं खाते हैं"
+          : "Passwords do not match",
+      );
       return;
     }
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
         pass: password,
         city,
         state,
-        role: "CITIZEN"
+        role: "CITIZEN",
       });
       setStep("OTP_VERIFY");
     } catch (err) {
@@ -144,21 +144,29 @@ export default function LoginPage() {
         <LanguageToggle />
         <ThemeToggle />
       </div>
-      
+
       {/* Home Link */}
       <div className="absolute top-4 left-4 z-50">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-14 h-14 flex items-center justify-center rounded-xl border border-primary/20 bg-white/5 p-1 shadow-lg group-hover:scale-105 transition-transform">
-            <Image src="/JS_logo.png" alt="JanSwar Logo" fill className="object-contain" priority />
+          <div className="relative w-14 h-14 flex items-center justify-center rounded-xl border border-primary/20 bg-white p-0 shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+            <Image
+              src="/JS_logo.png"
+              alt="JanSwar Logo"
+              fill
+              className="object-contain scale-160"
+              priority
+            />
           </div>
           <span className="font-black text-2xl tracking-tight text-foreground flex items-center gap-1">
-            JanSwar <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">AI</span>
+            JanSwar{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+              AI
+            </span>
           </span>
         </Link>
       </div>
 
       <div className="w-full max-w-6xl mt-16 mb-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center relative z-10">
-        
         {/* Banner Column */}
         <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left px-4">
           <motion.div
@@ -222,10 +230,14 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleToggleMode("LOGIN")}
                 className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${
-                  mode === "LOGIN" ? "text-white" : "text-muted-foreground hover:text-foreground"
+                  mode === "LOGIN"
+                    ? "text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="relative z-10">{language === "hi" ? "लॉग इन" : "Login"}</span>
+                <span className="relative z-10">
+                  {language === "hi" ? "लॉग इन" : "Login"}
+                </span>
                 {mode === "LOGIN" && (
                   <motion.div
                     layoutId="activeTab"
@@ -238,10 +250,14 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleToggleMode("SIGNUP")}
                 className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${
-                  mode === "SIGNUP" ? "text-white" : "text-muted-foreground hover:text-foreground"
+                  mode === "SIGNUP"
+                    ? "text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="relative z-10">{language === "hi" ? "साइन अप" : "Sign Up"}</span>
+                <span className="relative z-10">
+                  {language === "hi" ? "साइन अप" : "Sign Up"}
+                </span>
                 {mode === "SIGNUP" && (
                   <motion.div
                     layoutId="activeTab"
@@ -263,7 +279,11 @@ export default function LoginPage() {
                 {step === "OTP_VERIFY" ? (
                   <>
                     <KeyRound className="w-5 h-5 text-indigo-500 animate-pulse" />
-                    <span>{language === "hi" ? "ईमेल सत्यापित करें" : "Verify Your Email"}</span>
+                    <span>
+                      {language === "hi"
+                        ? "ईमेल सत्यापित करें"
+                        : "Verify Your Email"}
+                    </span>
                   </>
                 ) : mode === "LOGIN" ? (
                   <>
@@ -273,16 +293,24 @@ export default function LoginPage() {
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5 text-orange-500" />
-                    <span>{language === "hi" ? "नया खाता बनाएं" : "Create Citizen Account"}</span>
+                    <span>
+                      {language === "hi"
+                        ? "नया खाता बनाएं"
+                        : "Create Citizen Account"}
+                    </span>
                   </>
                 )}
               </h1>
               <p className="text-muted-foreground text-xs font-semibold">
-                {step === "OTP_VERIFY" 
-                  ? (language === "hi" ? `हमने ${email} पर एक सत्यापन कोड भेजा है।` : `We sent an OTP to ${email}.`)
-                  : mode === "LOGIN" 
-                  ? t("login.desc") 
-                  : (language === "hi" ? "सांसद से जुड़ने के लिए आवश्यक जानकारी भरें" : "Fill details to connect directly with your representative")}
+                {step === "OTP_VERIFY"
+                  ? language === "hi"
+                    ? `हमने ${email} पर एक सत्यापन कोड भेजा है।`
+                    : `We sent an OTP to ${email}.`
+                  : mode === "LOGIN"
+                    ? t("login.desc")
+                    : language === "hi"
+                      ? "सांसद से जुड़ने के लिए आवश्यक जानकारी भरें"
+                      : "Fill details to connect directly with your representative"}
               </p>
             </div>
 
@@ -290,8 +318,11 @@ export default function LoginPage() {
             {(error || localError) && (
               <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-xs font-semibold mb-6 flex items-center justify-between animate-fadeIn">
                 <span>{localError || error}</span>
-                <button 
-                  onClick={() => { setLocalError(null); clearError(); }} 
+                <button
+                  onClick={() => {
+                    setLocalError(null);
+                    clearError();
+                  }}
                   className="hover:opacity-85 text-sm p-1"
                 >
                   &times;
@@ -342,7 +373,11 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
-                            placeholder={language === "hi" ? "पासवर्ड दर्ज करें" : "Enter password"}
+                            placeholder={
+                              language === "hi"
+                                ? "पासवर्ड दर्ज करें"
+                                : "Enter password"
+                            }
                             required
                           />
                           <button
@@ -350,7 +385,11 @@ export default function LoginPage() {
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-4 top-3.5 hover:text-foreground text-muted-foreground/80 transition-colors"
                           >
-                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            {showPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -360,8 +399,12 @@ export default function LoginPage() {
                         disabled={isLoading || !email || !password}
                         className="w-full bg-primary hover:opacity-90 disabled:opacity-50 text-white rounded-2xl py-3.5 font-bold text-sm flex justify-center items-center gap-2 transition shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] mt-6"
                       >
-                        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>{language === "hi" ? "लॉग इन करें" : "Log In"}</span>
+                        {isLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                        <span>
+                          {language === "hi" ? "लॉग इन करें" : "Log In"}
+                        </span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </form>
@@ -380,7 +423,11 @@ export default function LoginPage() {
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
                             className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
-                            placeholder={language === "hi" ? "उदा. राजेश कुमार" : "e.g. Rajesh Kumar"}
+                            placeholder={
+                              language === "hi"
+                                ? "उदा. राजेश कुमार"
+                                : "e.g. Rajesh Kumar"
+                            }
                             required
                           />
                         </div>
@@ -426,7 +473,11 @@ export default function LoginPage() {
                               onClick={() => setShowPassword(!showPassword)}
                               className="absolute right-4 top-3.5 hover:text-foreground text-muted-foreground/80 transition-colors"
                             >
-                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              {showPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -434,24 +485,34 @@ export default function LoginPage() {
                         {/* Confirm Password */}
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                            {language === "hi" ? "पासवर्ड पुष्टि करें" : "Confirm Password"}
+                            {language === "hi"
+                              ? "पासवर्ड पुष्टि करें"
+                              : "Confirm Password"}
                           </label>
                           <div className="relative">
                             <Lock className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
                             <input
                               type={showConfirmPassword ? "text" : "password"}
                               value={confirmPassword}
-                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              onChange={(e) =>
+                                setConfirmPassword(e.target.value)
+                              }
                               className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
                               placeholder="Confirm"
                               required
                             />
                             <button
                               type="button"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
                               className="absolute right-4 top-3.5 hover:text-foreground text-muted-foreground/80 transition-colors"
                             >
-                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              {showConfirmPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -471,7 +532,9 @@ export default function LoginPage() {
                               value={city}
                               onChange={(e) => setCity(e.target.value)}
                               className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-11 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
-                              placeholder={language === "hi" ? "शहर" : "e.g. Purwa"}
+                              placeholder={
+                                language === "hi" ? "शहर" : "e.g. Purwa"
+                              }
                               required
                             />
                           </div>
@@ -489,7 +552,9 @@ export default function LoginPage() {
                               value={state}
                               onChange={(e) => setState(e.target.value)}
                               className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-11 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
-                              placeholder={language === "hi" ? "राज्य" : "e.g. Bihar"}
+                              placeholder={
+                                language === "hi" ? "राज्य" : "e.g. Bihar"
+                              }
                               required
                             />
                           </div>
@@ -499,11 +564,22 @@ export default function LoginPage() {
                       {/* Register button */}
                       <button
                         type="submit"
-                        disabled={isLoading || !email || !password || !fullName || !city || !state}
+                        disabled={
+                          isLoading ||
+                          !email ||
+                          !password ||
+                          !fullName ||
+                          !city ||
+                          !state
+                        }
                         className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 disabled:opacity-50 text-white rounded-2xl py-3.5 font-bold text-sm flex justify-center items-center gap-2 transition shadow-lg shadow-orange-500/20 hover:scale-[1.01] active:scale-[0.99] mt-6"
                       >
-                        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>{language === "hi" ? "रजिस्टर करें" : "Sign Up"}</span>
+                        {isLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                        <span>
+                          {language === "hi" ? "रजिस्टर करें" : "Sign Up"}
+                        </span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </form>
@@ -545,8 +621,14 @@ export default function LoginPage() {
                       disabled={isLoading || !otp}
                       className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-2xl py-3.5 font-bold text-sm flex justify-center items-center gap-2 transition shadow-lg shadow-emerald-600/20 hover:scale-[1.01] active:scale-[0.99]"
                     >
-                      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                      <span>{language === "hi" ? "ओटीपी सत्यापित करें" : "Verify Code"}</span>
+                      {isLoading && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
+                      <span>
+                        {language === "hi"
+                          ? "ओटीपी सत्यापित करें"
+                          : "Verify Code"}
+                      </span>
                     </button>
 
                     <div className="text-center mt-4">
@@ -555,7 +637,9 @@ export default function LoginPage() {
                         onClick={() => setStep("FORM")}
                         className="text-xs font-bold text-primary hover:underline"
                       >
-                        {language === "hi" ? "वापस विवरण बदलें" : "Change Register Details"}
+                        {language === "hi"
+                          ? "वापस विवरण बदलें"
+                          : "Change Register Details"}
                       </button>
                     </div>
                   </form>
