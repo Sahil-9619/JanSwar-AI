@@ -3,7 +3,7 @@
     "login": "Login"
   },
   "landing": {
-    "heroTitle": "Constituency Intelligence Platform",
+    "heroTitle": "",
     "heroSubtitle": "Turning Every Citizen's Voice into Smarter Development Decisions.",
     "heroDesc": "JanSwar AI empowers MPs and local administrations to track, analyze, and resolve civic issues using real-time data and AI-driven insights.",
     "getStarted": "Get Started",
@@ -13,7 +13,13 @@
     "feature2Title": "Real-Time Tracking",
     "feature2Desc": "Live dashboards track progress across villages, wards, and administrative blocks for full transparency.",
     "feature3Title": "Predictive Planning",
-    "feature3Desc": "Anticipate infrastructure needs before they become crises using our predictive analytics models."
+    "feature3Desc": "Anticipate infrastructure needs before they become crises using our predictive analytics models.",
+    "heroTitleCitizen": "Your Voice, Your District's Growth",
+    "heroSubtitleCitizen": "Directly report issues and suggest improvements to your Member of Parliament (MP).",
+    "heroDescCitizen": "JanSwar AI makes public grievance reporting simple. Speak or type in your own language, see your issue priority score, and track resolution progress transparently.",
+    "fileComplaint": "File a Complaint",
+    "trackStatus": "Track Status",
+    "viewStats": "View Stats"
   },
   "login": {
     "welcome": "Welcome to JanSwar AI",

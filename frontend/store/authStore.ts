@@ -19,6 +19,9 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   requestOtp: (email: string, role?: Role, fullName?: string) => Promise<void>;
   verifyOtp: (email: string, otp: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<void>;
+  signup: (details: { fullName: string; email: string; pass: string; city: string; state: string; role: Role }) => Promise<void>;
+  verifySignup: (email: string, otp: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
@@ -58,6 +61,53 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err: any) {
       console.error("Failed to verify OTP:", err.message);
       set({ isLoading: false, error: err.response?.data?.error || "Failed to verify OTP" });
+      throw err;
+    }
+  },
+
+  login: async (email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      const { token, user } = res.data;
+      localStorage.setItem("token", token);
+      set({ user, token, isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to log in:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to log in" });
+      throw err;
+    }
+  },
+
+  signup: async (details) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/auth/signup", {
+        fullName: details.fullName,
+        email: details.email,
+        password: details.pass,
+        city: details.city,
+        state: details.state,
+        role: details.role
+      });
+      set({ isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to sign up:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to sign up" });
+      throw err;
+    }
+  },
+
+  verifySignup: async (email: string, otp: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post("/auth/verify-signup", { email, otp });
+      const { token, user } = res.data;
+      localStorage.setItem("token", token);
+      set({ user, token, isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to verify signup:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to verify signup OTP" });
       throw err;
     }
   },

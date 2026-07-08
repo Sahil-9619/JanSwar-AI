@@ -1,7 +1,4 @@
 "use client";
-import { ThemeToggle } from "../../components/ThemeToggle";
-import { LanguageToggle } from "../../components/LanguageToggle";
-import { useLanguage } from "../../context/LanguageContext";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -11,8 +8,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LogOut, Plus, MapPin, Calendar, Clock, 
   AlertCircle, Mic, Square, Trash2, Upload, FileText, Image as ImageIcon,
-  Loader2, Sparkles, Send, X, User, ListFilter, Activity
+  Loader2, Sparkles, Send, X, User, ListFilter, Activity, ChevronRight, Play, CheckCircle2, File
 } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageToggle } from "../../components/LanguageToggle";
+import Link from "next/link";
+import Image from "next/image";
 
 interface Suggestion {
   id: string;
@@ -33,7 +35,7 @@ interface Suggestion {
 
 export default function CitizenDashboard() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, token, logout, isLoading: isAuthLoading, checkAuth } = useAuthStore();
 
   // Suggestion list states
@@ -50,14 +52,19 @@ export default function CitizenDashboard() {
 
   // Selected geography & form variables
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [districtInput, setDistrictInput] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("");
+  const [blockInput, setBlockInput] = useState("");
   const [selectedVillage, setSelectedVillage] = useState("");
+  const [villageInput, setVillageInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [pincodeInput, setPincodeInput] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   
-  // Files
+  // Files and Previews
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [docFile, setDocFile] = useState<File | null>(null);
 
   // Audio recording states
@@ -116,11 +123,9 @@ export default function CitizenDashboard() {
 
   const fetchMetadata = async () => {
     try {
-      // Fetch categories
       const catRes = await api.get("/categories");
       setCategories(catRes.data.categories);
 
-      // Fetch districts
       const distRes = await api.get("/locations/districts");
       setDistricts(distRes.data.districts);
     } catch (err) {
@@ -159,7 +164,7 @@ export default function CitizenDashboard() {
     }
   }, [selectedBlock]);
 
-  // Handle Fetching Geolocation coordinates
+  // Handle Fetching Geolocation coordinates and reverse geocoding to prefill details
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
@@ -167,20 +172,164 @@ export default function CitizenDashboard() {
     }
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLat(position.coords.latitude);
-        setLng(position.coords.longitude);
-        setIsLocating(false);
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        setLat(latitude);
+        setLng(longitude);
+        
+        try {
+          // Fetch reverse geocode details from OpenStreetMap Nominatim API
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`, {
+            headers: {
+              "Accept-Language": language === "hi" ? "hi" : "en"
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const address = data.address;
+            if (address) {
+              const detectedDistrict = address.county || address.city || address.district || address.state_district || "";
+              const detectedBlock = address.suburb || address.city_district || address.town || "";
+              const detectedVillage = address.village || address.hamlet || address.neighbourhood || address.road || "";
+              const detectedPincode = address.postcode || "";
+              
+              const cleanDistrict = detectedDistrict.replace(/\s*District/gi, "").trim();
+              const cleanBlock = detectedBlock.trim();
+              const cleanVillage = detectedVillage.trim();
+              const cleanPincode = detectedPincode.trim();
+              
+              if (cleanPincode) setPincodeInput(cleanPincode);
+              
+              if (cleanDistrict) {
+                setDistrictInput(cleanDistrict);
+                const matchedDist = districts.find(d => d.name.toLowerCase() === cleanDistrict.toLowerCase());
+                if (matchedDist) {
+                  setSelectedDistrict(matchedDist.id);
+                  
+                  // Fetch blocks for this district immediately
+                  const blocksRes = await api.get(`/locations/districts/${matchedDist.id}/blocks`);
+                  const fetchedBlocks = blocksRes.data.blocks;
+                  setBlocks(fetchedBlocks);
+                  
+                  if (cleanBlock) {
+                    setBlockInput(cleanBlock);
+                    const matchedBlk = fetchedBlocks.find((b: any) => b.name.toLowerCase() === cleanBlock.toLowerCase() || b.name.toLowerCase().includes(cleanBlock.toLowerCase()));
+                    if (matchedBlk) {
+                      setSelectedBlock(matchedBlk.id);
+                      
+                      // Fetch villages for this block immediately
+                      const villagesRes = await api.get(`/locations/blocks/${matchedBlk.id}/villages`);
+                      const fetchedVillages = villagesRes.data.villages;
+                      setVillages(fetchedVillages);
+                      
+                      if (cleanVillage) {
+                        setVillageInput(cleanVillage);
+                        const matchedVil = fetchedVillages.find((v: any) => v.name.toLowerCase() === cleanVillage.toLowerCase() || v.name.toLowerCase().includes(cleanVillage.toLowerCase()));
+                        if (matchedVil) {
+                          setSelectedVillage(matchedVil.id);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Reverse geocoding error:", err);
+        } finally {
+          setIsLocating(false);
+        }
       },
       (error) => {
         console.error("Geolocation error:", error);
-        // Fallback to mock Patna coordinates
+        // Fallback to mock Patna Sadar coordinates geocode mapping
         setLat(25.5941);
         setLng(85.1376);
+        setDistrictInput("Patna");
+        setBlockInput("Patna Sadar");
+        setVillageInput("Polson Village");
+        setPincodeInput("800001");
+        
+        const matchedDist = districts.find(d => d.name.toLowerCase() === "patna");
+        if (matchedDist) {
+          setSelectedDistrict(matchedDist.id);
+          api.get(`/locations/districts/${matchedDist.id}/blocks`).then(res => {
+            setBlocks(res.data.blocks);
+            const matchedBlk = res.data.blocks.find((b: any) => b.name.toLowerCase() === "patna sadar");
+            if (matchedBlk) {
+              setSelectedBlock(matchedBlk.id);
+              api.get(`/locations/blocks/${matchedBlk.id}/villages`).then(res2 => {
+                setVillages(res2.data.villages);
+                const matchedVil = res2.data.villages.find((v: any) => v.name.toLowerCase() === "polson village");
+                if (matchedVil) {
+                  setSelectedVillage(matchedVil.id);
+                }
+              });
+            }
+          });
+        }
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  // Handle Image upload and preview URL creation
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    if (file) {
+      setImagePreviewUrl(URL.createObjectURL(file));
+    } else {
+      setImagePreviewUrl(null);
+    }
+  };
+
+  // Handle writeable district input change
+  const handleDistrictInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDistrictInput(value);
+    const matched = districts.find(d => d.name.toLowerCase() === value.toLowerCase());
+    if (matched) {
+      setSelectedDistrict(matched.id);
+    } else {
+      setSelectedDistrict("");
+      setSelectedBlock("");
+      setBlockInput("");
+      setSelectedVillage("");
+      setVillageInput("");
+    }
+  };
+
+  // Handle writeable block input change
+  const handleBlockInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setBlockInput(value);
+    const matched = blocks.find(b => b.name.toLowerCase() === value.toLowerCase());
+    if (matched) {
+      setSelectedBlock(matched.id);
+    } else {
+      setSelectedBlock("");
+      setSelectedVillage("");
+      setVillageInput("");
+    }
+  };
+
+  // Handle writeable village input change
+  const handleVillageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setVillageInput(value);
+    const matched = villages.find(v => v.name.toLowerCase() === value.toLowerCase());
+    if (matched) {
+      setSelectedVillage(matched.id);
+    } else {
+      setSelectedVillage("");
+    }
   };
 
   // Start Audio Recording
@@ -232,6 +381,9 @@ export default function CitizenDashboard() {
   };
 
   const deleteRecording = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
     setAudioBlob(null);
     setAudioUrl(null);
     setRecordDuration(0);
@@ -254,7 +406,19 @@ export default function CitizenDashboard() {
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append("title", title);
-    formData.append("description", description);
+    
+    let finalDescription = description;
+    const customLocs = [];
+    if (!selectedDistrict && districtInput) customLocs.push(`District: ${districtInput}`);
+    if (!selectedBlock && blockInput) customLocs.push(`Block: ${blockInput}`);
+    if (!selectedVillage && villageInput) customLocs.push(`Village: ${villageInput}`);
+    if (pincodeInput) customLocs.push(`Pincode: ${pincodeInput}`);
+    
+    if (customLocs.length > 0) {
+      finalDescription = `${description}\n\n[Custom Location Details]\n${customLocs.join("\n")}`;
+    }
+    formData.append("description", finalDescription);
+    
     formData.append("latitude", lat.toString());
     formData.append("longitude", lng.toString());
     
@@ -284,11 +448,19 @@ export default function CitizenDashboard() {
       setDescription("");
       setSelectedCategory("");
       setSelectedDistrict("");
+      setDistrictInput("");
       setSelectedBlock("");
+      setBlockInput("");
       setSelectedVillage("");
+      setVillageInput("");
+      setPincodeInput("");
       setLat(null);
       setLng(null);
       setImageFile(null);
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+        setImagePreviewUrl(null);
+      }
       setDocFile(null);
       deleteRecording();
       setIsSubmitOpen(false);
@@ -305,15 +477,15 @@ export default function CitizenDashboard() {
   const getStatusBadge = (status: Suggestion["status"]) => {
     switch (status) {
       case "PENDING":
-        return <span className="px-3 py-1 rounded-full text-xs font-medium border border-amber-500/20 bg-amber-500/5 text-amber-300">Pending Ingestion</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-semibold border border-amber-500/20 bg-amber-500/10 text-amber-500 dark:text-amber-300">Pending Ingestion</span>;
       case "PROCESSING":
-        return <span className="px-3 py-1 rounded-full text-xs font-medium border border-blue-500/20 bg-blue-500/5 text-blue-300 flex items-center gap-1.5 w-max"><Loader2 className="w-3 h-3 animate-spin text-blue-400" /> AI Processing</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-semibold border border-blue-500/20 bg-blue-500/10 text-blue-500 dark:text-blue-300 flex items-center gap-1.5 w-max"><Loader2 className="w-3 h-3 animate-spin text-blue-500" /> AI Processing</span>;
       case "ANALYZED":
-        return <span className="px-3 py-1 rounded-full text-xs font-medium border border-emerald-500/20 bg-emerald-500/5 text-emerald-300">AI Analyzed</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-semibold border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 dark:text-emerald-300">AI Analyzed</span>;
       case "APPROVED":
-        return <span className="px-3 py-1 rounded-full text-xs font-medium border border-teal-500/20 bg-teal-500/5 text-teal-300">Approved for planning</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-semibold border border-teal-500/20 bg-teal-500/10 text-teal-500 dark:text-teal-300">Approved</span>;
       case "REJECTED":
-        return <span className="px-3 py-1 rounded-full text-xs font-medium border border-rose-500/20 bg-rose-500/5 text-rose-300">Archived</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-semibold border border-rose-500/20 bg-rose-500/10 text-rose-500 dark:text-rose-300">Archived</span>;
     }
   };
 
@@ -337,43 +509,69 @@ export default function CitizenDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between overflow-x-hidden">
-      {/* Ambient background glow */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between overflow-x-hidden relative pt-24">
+      {/* Ambient background glows */}
+      <div className="absolute top-[10%] right-[5%] w-[40vw] h-[40vw] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-10%] w-[35vw] h-[35vw] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Navigation */}
-      <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-border relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <span className="font-bold text-lg text-white">JS</span>
+      {/* Sticky Premium Navigation Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative w-12 h-12 rounded-xl border border-primary/20 bg-white/5 p-1 shadow-lg group-hover:scale-105 transition-transform flex items-center justify-center">
+                <Image
+                  src="/JS_logo.png"
+                  alt="JanSwar Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div>
+                <span className="font-black text-xl tracking-tight text-foreground flex items-center gap-1">
+                  JanSwar{" "}
+                  <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                    AI
+                  </span>
+                </span>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                  {language === "hi" ? "नागरिक पोर्टल" : "Citizen Portal"}
+                </p>
+              </div>
+            </Link>
           </div>
-          <div>
-            <h1 className="font-extrabold text-lg text-foreground">
-              JanSwar <span className="gradient-text">AI</span>
-            </h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">{t("dashboard.citizenTitle")}</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <LanguageToggle />
-          <ThemeToggle />
-          <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground">
-            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
-              {user?.fullName.charAt(0) || "C"}
+          {/* Center Navigation Info */}
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs text-primary font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-blue-500" />
+            <span>
+              {language === "hi" ? "सांसद डायरेक्ट कनेक्ट" : "Direct Connect with Your MP"}
+            </span>
+          </div>
+
+          {/* Right Action Widgets */}
+          <div className="flex items-center gap-4">
+            <LanguageToggle />
+            <ThemeToggle />
+            
+            <div className="hidden sm:flex items-center gap-2.5 bg-card/60 border border-border/60 rounded-full px-3 py-1.5 text-xs text-foreground font-bold shadow-sm">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-[10px] font-black">
+                {user?.fullName.charAt(0) || "C"}
+              </div>
+              <span className="max-w-[100px] truncate">{user?.fullName}</span>
             </div>
-            <span className="max-w-[120px] truncate font-medium">{user?.fullName}</span>
+            
+            <button 
+              onClick={handleLogout}
+              className="p-2.5 rounded-xl bg-card border border-border hover:border-rose-500/30 hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition shadow-sm"
+              title="Log Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-rose-400 transition"
-            title="Log Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
-      </nav>
+      </header>
 
       {/* Main Body */}
       <main className="w-full max-w-7xl mx-auto px-6 py-10 flex-1 relative z-10">
@@ -381,44 +579,62 @@ export default function CitizenDashboard() {
         {/* Top Header Summary */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Your Development Voice</h2>
-            <p className="text-sm text-slate-400 mt-1">Submit road, water, health suggestions and track their AI planning progression.</p>
+            <h2 className="text-3xl font-black tracking-tight text-foreground leading-tight">
+              {language === "hi" ? "आपका विकास मंच" : "Your Development Voice"}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1.5 font-medium max-w-2xl">
+              {language === "hi"
+                ? "सड़क, पानी, स्वास्थ्य या बिजली से जुड़े मुद्दों को दर्ज करें और वास्तविक समय में एआई विश्लेषण और प्रशासन की प्रतिक्रिया को ट्रैक करें।"
+                : "Submit local infrastructure issues like roads, water, or health and track real-time AI prioritizations and MP updates."}
+            </p>
           </div>
 
           <button 
             onClick={() => setIsSubmitOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg shadow-blue-600/10 hover:shadow-blue-600/20 transition-all hover:-translate-y-[1px]"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 text-white font-extrabold text-sm py-3.5 px-6 rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all hover:scale-[1.01] active:scale-[0.99] self-stretch md:self-auto justify-center"
           >
-            <Plus className="w-4.5 h-4.5" />
-            New Suggestion
+            <Plus className="w-5 h-5" />
+            <span>{language === "hi" ? "नया सुझाव / शिकायत" : "New Suggestion"}</span>
           </button>
         </div>
 
         {/* Status Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           
-          <div className="glass-panel rounded-2xl p-5 border border-white/5 flex flex-col gap-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Submitted Requests</span>
-            <span className="text-3xl font-extrabold">{suggestions.length}</span>
+          <div className="bg-card/50 border border-border/60 rounded-3xl p-5 shadow-md flex flex-col gap-2 relative overflow-hidden backdrop-blur-sm">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              {language === "hi" ? "कुल सबमिशन" : "Submitted"}
+            </span>
+            <span className="text-3xl font-black text-foreground">{suggestions.length}</span>
           </div>
 
-          <div className="glass-panel rounded-2xl p-5 border border-white/5 flex flex-col gap-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Processing</span>
-            <span className="text-3xl font-extrabold text-blue-400">
+          <div className="bg-card/50 border border-border/60 rounded-3xl p-5 shadow-md flex flex-col gap-2 relative overflow-hidden backdrop-blur-sm">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              {language === "hi" ? "प्रसंस्करण में" : "Processing"}
+            </span>
+            <span className="text-3xl font-black text-blue-500">
               {suggestions.filter(s => s.status === "PROCESSING").length}
             </span>
           </div>
 
-          <div className="glass-panel rounded-2xl p-5 border border-white/5 flex flex-col gap-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">AI Analyzed</span>
-            <span className="text-3xl font-extrabold text-emerald-400">
+          <div className="bg-card/50 border border-border/60 rounded-3xl p-5 shadow-md flex flex-col gap-2 relative overflow-hidden backdrop-blur-sm">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              {language === "hi" ? "एआई विश्लेषित" : "AI Analyzed"}
+            </span>
+            <span className="text-3xl font-black text-emerald-500">
               {suggestions.filter(s => s.status === "ANALYZED" || s.status === "APPROVED").length}
             </span>
           </div>
 
-          <div className="glass-panel rounded-2xl p-5 border border-white/5 flex flex-col gap-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Priority Scored</span>
-            <span className="text-3xl font-extrabold text-indigo-400">
+          <div className="bg-card/50 border border-border/60 rounded-3xl p-5 shadow-md flex flex-col gap-2 relative overflow-hidden backdrop-blur-sm">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              {language === "hi" ? "प्राथमिकता प्राप्त" : "Priority Scored"}
+            </span>
+            <span className="text-3xl font-black text-indigo-500">
               {suggestions.filter(s => s.priorityScore).length}
             </span>
           </div>
@@ -426,69 +642,89 @@ export default function CitizenDashboard() {
         </div>
 
         {/* Suggestions List Container */}
-        <div className="glass-panel rounded-3xl p-6 md:p-8 border border-white/5 min-h-[350px] relative">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-            <h3 className="font-bold text-lg">Suggestion Tracking History</h3>
-            <ListFilter className="w-4 h-4 text-slate-400" />
+        <div className="bg-card/50 border border-border/60 rounded-[2.5rem] p-6 md:p-8 shadow-xl min-h-[350px] relative overflow-hidden backdrop-blur-sm">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
+            <h3 className="font-black text-lg text-foreground">
+              {language === "hi" ? "शिकायत ट्रैकिंग इतिहास" : "Grievance Tracking History"}
+            </h3>
+            <ListFilter className="w-4 h-4 text-muted-foreground" />
           </div>
 
           {isLoadingList ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
           ) : listError ? (
             <div className="text-center py-12">
-              <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-              <p className="font-medium text-slate-300">{listError}</p>
-              <button onClick={fetchSuggestions} className="mt-4 px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-sm hover:bg-white/10 transition">Try Again</button>
+              <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4 animate-pulse" />
+              <p className="font-bold text-foreground">{listError}</p>
+              <button 
+                onClick={fetchSuggestions} 
+                className="mt-4 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-bold hover:bg-accent transition"
+              >
+                {language === "hi" ? "पुनः प्रयास करें" : "Try Again"}
+              </button>
             </div>
           ) : suggestions.length === 0 ? (
             <div className="text-center py-20 flex flex-col items-center justify-center">
-              <Activity className="w-12 h-12 text-slate-600 mb-4" />
-              <h4 className="font-bold text-slate-300">No suggestions submitted yet</h4>
-              <p className="text-slate-500 text-sm max-w-sm mt-1">Submit your first suggestion using voice recording or text. Let's make Patna Sadar smarter.</p>
+              <Activity className="w-12 h-12 text-muted-foreground/60 mb-4" />
+              <h4 className="font-black text-foreground">
+                {language === "hi" ? "अभी तक कोई शिकायत दर्ज नहीं की गई है" : "No suggestions submitted yet"}
+              </h4>
+              <p className="text-muted-foreground text-xs font-semibold max-w-sm mt-2 leading-relaxed">
+                {language === "hi" 
+                  ? "अपनी पहली शिकायत आवाज या विवरण लिखकर दर्ज करें। विकास कार्यों में भाग लें।"
+                  : "Submit your first suggestion using voice recording or text. Help make planning transparent."}
+              </p>
               <button 
                 onClick={() => setIsSubmitOpen(true)}
-                className="mt-6 px-4 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-xl text-sm font-semibold transition"
+                className="mt-6 px-6 py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl text-xs font-extrabold transition"
               >
-                Launch Submission Wizard
+                {language === "hi" ? "शिकायत विज़ार्ड प्रारंभ करें" : "Launch Submission Wizard"}
               </button>
             </div>
           ) : (
             <div className="space-y-4">
               {suggestions.map((item) => (
-                <div key={item.id} className="border border-white/5 bg-slate-900/10 rounded-2xl p-5 hover:border-white/10 transition flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div 
+                  key={item.id} 
+                  className="border border-border/60 bg-background/30 rounded-2xl p-5 hover:border-primary/20 transition-colors flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+                >
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center flex-wrap gap-2.5">
-                      <h4 className="font-bold text-base text-white">{item.title}</h4>
+                      <h4 className="font-extrabold text-base text-foreground">{item.title}</h4>
                       {item.category && (
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-300 border border-blue-500/10">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary border border-primary/25">
                           {item.category.name}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-sm text-slate-400 line-clamp-2">{item.description || item.transcription || "No details provided"}</p>
+                    <p className="text-xs text-muted-foreground font-semibold line-clamp-2 leading-relaxed">
+                      {item.description || item.transcription || "No details provided"}
+                    </p>
 
-                    <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-slate-500">
+                    <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
                       <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-600" />
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Patna District, {item.block?.name || "Sadar"}, {item.village?.name || "Village"}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Status & Priority Weight details */}
-                  <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-white/5">
+                  <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-border/40">
                     {getStatusBadge(item.status)}
                     
                     {item.priorityScore && (
-                      <div className="flex items-center gap-1.5 text-xs text-indigo-300 font-semibold bg-indigo-500/5 px-2.5 py-1 rounded-lg border border-indigo-500/10">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      <div className="flex items-center gap-1.5 text-xs text-indigo-500 dark:text-indigo-300 font-bold bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/25">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
                         Priority Score: {item.priorityScore.finalScore.toFixed(0)}/100
                       </div>
                     )}
@@ -511,7 +747,7 @@ export default function CitizenDashboard() {
               animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
               onClick={() => { if(!isSubmitting) setIsSubmitOpen(false); }}
-              className="fixed inset-0 bg-black z-40 cursor-pointer"
+              className="fixed inset-0 bg-black/60 z-40 cursor-pointer backdrop-blur-sm"
             />
 
             {/* Sidebar drawer */}
@@ -520,31 +756,33 @@ export default function CitizenDashboard() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.35 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-slate-950 border-l border-white/10 shadow-2xl z-50 overflow-y-auto flex flex-col justify-between"
+              className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-card border-l border-border shadow-2xl z-50 overflow-y-auto flex flex-col justify-between"
             >
               {/* Header */}
-              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+              <div className="p-6 border-b border-border flex items-center justify-between bg-card/90 sticky top-0 z-20 backdrop-blur-md">
                 <div>
-                  <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-blue-400" />
-                    Submit Suggestion
+                  <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    {language === "hi" ? "शिकायत / सुझाव जमा करें" : "Submit Suggestion"}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">Multi-format intelligence input parsing (Speech/Text)</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 font-semibold">
+                    {language === "hi" ? "वाणी या पाठ इनपुट विश्लेषण (एआई पावर्ड)" : "AI-Powered speech/text input parsing"}
+                  </p>
                 </div>
                 <button 
                   onClick={() => setIsSubmitOpen(false)}
                   disabled={isSubmitting}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition disabled:opacity-50"
+                  className="p-2 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground transition disabled:opacity-50"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Form Body */}
-              <form onSubmit={handleSubmitSuggestion} className="p-6 space-y-6 flex-1">
+              <form onSubmit={handleSubmitSuggestion} className="p-6 space-y-6 flex-1 bg-card">
                 
                 {submitError && (
-                  <div className="p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-300 text-xs flex gap-2">
+                  <div className="p-4 rounded-xl border border-rose-500/25 bg-rose-500/10 text-rose-500 text-xs font-semibold flex gap-2">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <div>{submitError}</div>
                   </div>
@@ -552,132 +790,143 @@ export default function CitizenDashboard() {
 
                 {/* Suggestion Title */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                    Suggestion / Issue Title *
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {language === "hi" ? "सुझाव / शिकायत का शीर्षक *" : "Suggestion / Issue Title *"}
                   </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Repair damaged bridge at Village entry"
+                    placeholder={language === "hi" ? "उदा. मुख्य सड़क पर गड्ढों की मरम्मत" : "e.g. Repair damaged bridge at Village entry"}
                     disabled={isSubmitting}
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                    className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
                   />
                 </div>
 
                 {/* Text Description */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                    Detailed Description
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {language === "hi" ? "विस्तृत विवरण" : "Detailed Description"}
                   </label>
                   <textarea
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide details about the infrastructure gap. (Optional if submitting Voice recording)"
+                    placeholder={language === "hi" ? "शिकायत का विस्तृत विवरण लिखें (आवाज इनपुट देने पर वैकल्पिक)" : "Provide details about the infrastructure gap. (Optional if submitting Voice recording)"}
                     disabled={isSubmitting}
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition resize-none"
+                    className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition resize-none"
                   />
                 </div>
 
-                {/* Categories & Geography Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  
-                  {/* Category Selection */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                      Category
-                    </label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      disabled={isSubmitting}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-3 text-xs text-white focus:outline-none cursor-pointer"
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  {/* District Selection */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                      District
-                    </label>
-                    <select
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
-                      disabled={isSubmitting}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-3 text-xs text-white focus:outline-none cursor-pointer"
-                    >
-                      <option value="">Select District</option>
-                      {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                  </div>
-
+                {/* Hidden Category and District Text Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {language === "hi" ? "जिला *" : "District *"}
+                  </label>
+                  <input
+                    type="text"
+                    list="districts-list"
+                    value={districtInput}
+                    onChange={handleDistrictInputChange}
+                    placeholder={language === "hi" ? "अपना जिला यहाँ लिखें (उदा. Patna)" : "Type your district (e.g. Patna)"}
+                    disabled={isSubmitting}
+                    className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                  />
+                  <datalist id="districts-list">
+                    {districts.map(d => (
+                      <option key={d.id} value={d.name} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   
                   {/* Block Selection */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                      Block
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                      {language === "hi" ? "ब्लॉक" : "Block"}
                     </label>
-                    <select
-                      value={selectedBlock}
-                      onChange={(e) => setSelectedBlock(e.target.value)}
-                      disabled={!selectedDistrict || isSubmitting}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-3 text-xs text-white focus:outline-none disabled:opacity-50 cursor-pointer"
-                    >
-                      <option value="">Select Block</option>
-                      {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
+                    <input
+                      type="text"
+                      list="blocks-list"
+                      value={blockInput}
+                      onChange={handleBlockInputChange}
+                      placeholder={language === "hi" ? "अपना ब्लॉक लिखें" : "Type block"}
+                      disabled={isSubmitting}
+                      className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-xs text-foreground focus:outline-none disabled:opacity-50 transition"
+                    />
+                    <datalist id="blocks-list">
+                      {blocks.map(b => (
+                        <option key={b.id} value={b.name} />
+                      ))}
+                    </datalist>
                   </div>
 
                   {/* Village Selection */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                      Village
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                      {language === "hi" ? "गाँव" : "Village"}
                     </label>
-                    <select
-                      value={selectedVillage}
-                      onChange={(e) => setSelectedVillage(e.target.value)}
-                      disabled={!selectedBlock || isSubmitting}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-3 text-xs text-white focus:outline-none disabled:opacity-50 cursor-pointer"
-                    >
-                      <option value="">Select Village</option>
-                      {villages.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                    </select>
+                    <input
+                      type="text"
+                      list="villages-list"
+                      value={villageInput}
+                      onChange={handleVillageInputChange}
+                      placeholder={language === "hi" ? "अपना गाँव लिखें" : "Type village"}
+                      disabled={isSubmitting}
+                      className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-xs text-foreground focus:outline-none disabled:opacity-50 transition"
+                    />
+                    <datalist id="villages-list">
+                      {villages.map(v => (
+                        <option key={v.id} value={v.name} />
+                      ))}
+                    </datalist>
                   </div>
 
                 </div>
 
+                {/* Pincode Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {language === "hi" ? "पिनकोड" : "Pincode"}
+                  </label>
+                  <input
+                    type="text"
+                    value={pincodeInput}
+                    onChange={(e) => setPincodeInput(e.target.value)}
+                    placeholder={language === "hi" ? "अपना पिनकोड लिखें (उदा. 800001)" : "Type pincode (e.g. 800001)"}
+                    disabled={isSubmitting}
+                    className="w-full bg-background/50 border border-border rounded-2xl py-3.5 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                  />
+                </div>
+
                 {/* GEOLOCATION DETECTOR */}
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-4 rounded-2xl bg-card border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h4 className="font-bold text-xs">GPS Location coordinates *</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Required for spatial planning and heatmap mapping</p>
+                    <h4 className="font-bold text-xs">{language === "hi" ? "जीपीएस स्थान समन्वय *" : "GPS Location Coordinates *"}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 font-semibold">
+                      {language === "hi" ? "स्थान मानचित्रण के लिए आवश्यक" : "Required for district map integration"}
+                    </p>
                     {lat && lng && (
-                      <p className="text-[11px] font-mono text-emerald-400 mt-1.5">Lat: {lat.toFixed(6)}, Lng: {lng.toFixed(6)}</p>
+                      <p className="text-[11px] font-mono text-emerald-500 font-bold mt-1.5">Lat: {lat.toFixed(6)}, Lng: {lng.toFixed(6)}</p>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={handleGetLocation}
                     disabled={isLocating || isSubmitting}
-                    className="flex items-center gap-1.5 py-2 px-3.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-bold transition disabled:opacity-50 self-start sm:self-auto"
+                    className="flex items-center gap-1.5 py-2 px-3.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 border border-blue-500/20 rounded-xl text-xs font-bold transition disabled:opacity-50 self-start sm:self-auto shadow-sm"
                   >
                     {isLocating ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        Detecting...
+                        <span>{language === "hi" ? "खोज रहा है..." : "Locating..."}</span>
                       </>
                     ) : (
                       <>
                         <MapPin className="w-3.5 h-3.5" />
-                        Grab Current GPS
+                        <span>{language === "hi" ? "जीपीएस से प्राप्त करें" : "Detect Coordinates"}</span>
                       </>
                     )}
                   </button>
@@ -685,20 +934,19 @@ export default function CitizenDashboard() {
 
                 {/* AUDIO RECORDER CONTAINER */}
                 <div className="space-y-2.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                    Voice Suggestion (Multilingual Speech to Text)
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {language === "hi" ? "आवाज रिकॉर्डिंग (बहुभाषी एआई विश्लेषण)" : "Voice Suggestion (Multilingual Speech to Text)"}
                   </label>
-                  <div className="border border-white/10 rounded-2xl p-4 bg-slate-900/30 flex flex-col items-center justify-center gap-4">
+                  <div className="border border-border rounded-2xl p-4 bg-background/40 flex flex-col items-center justify-center gap-4">
                     {!audioUrl ? (
                       <div className="flex flex-col items-center gap-2">
                         {isRecording ? (
                           <div className="flex flex-col items-center gap-3">
-                            {/* Recording pulse animation */}
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold animate-pulse">
                               <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                              Recording Voice...
+                              {language === "hi" ? "आवाज रिकॉर्ड हो रही है..." : "Recording Voice..."}
                             </div>
-                            <span className="text-2xl font-mono text-white tracking-widest">{formatDuration(recordDuration)}</span>
+                            <span className="text-2xl font-mono text-foreground tracking-widest font-black">{formatDuration(recordDuration)}</span>
                             <button
                               type="button"
                               onClick={stopRecording}
@@ -709,36 +957,45 @@ export default function CitizenDashboard() {
                           </div>
                         ) : (
                           <>
-                            <p className="text-[11px] text-slate-500 text-center">Record suggestion in Hindi, English, Bhojpuri, or Maithili</p>
+                            <p className="text-[10px] text-muted-foreground font-semibold text-center leading-relaxed">
+                              {language === "hi" 
+                                ? "हिंदी, अंग्रेजी, भोजपुरी या मैथिली बोली में रिकॉर्ड करें" 
+                                : "Record suggestion in Hindi, English, Bhojpuri, or Maithili"}
+                            </p>
                             <button
                               type="button"
                               onClick={startRecording}
                               disabled={isSubmitting}
-                              className="flex items-center gap-2 py-3 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/15 disabled:opacity-50"
+                              className="flex items-center gap-2 py-3 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold transition shadow-md disabled:opacity-50"
                             >
                               <Mic className="w-4 h-4" />
-                              Start Voice Recording
+                              <span>{language === "hi" ? "आवाज रिकॉर्ड करना शुरू करें" : "Start Voice Recording"}</span>
                             </button>
                           </>
                         )}
                       </div>
                     ) : (
+                      /* Audible voice preview widget */
                       <div className="w-full space-y-3">
-                        <div className="flex items-center justify-between text-xs bg-white/5 border border-white/10 rounded-xl p-3">
-                          <div className="flex items-center gap-2">
-                            <Mic className="w-4 h-4 text-emerald-400" />
-                            <span className="font-semibold text-slate-300">Voice Record Ready</span>
+                        <div className="flex items-center justify-between text-xs bg-card border border-border rounded-xl p-3 shadow-sm">
+                          <div className="flex items-center gap-2 font-bold text-foreground">
+                            <Mic className="w-4 h-4 text-emerald-500" />
+                            <span>{language === "hi" ? "आवाज रिकॉर्डिंग तैयार है (ऑडिबल)" : "Voice Recording Ready (Audible)"}</span>
                           </div>
                           <button
                             type="button"
                             onClick={deleteRecording}
                             disabled={isSubmitting}
-                            className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-rose-400 transition disabled:opacity-50"
+                            className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 border border-transparent hover:border-rose-500/20 transition disabled:opacity-50"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <audio src={audioUrl} controls className="w-full h-9 rounded-lg" />
+                        
+                        {/* Audible HTML5 audio player */}
+                        <div className="w-full bg-background border border-border p-2 rounded-xl shadow-inner">
+                          <audio src={audioUrl} controls className="w-full h-10 opacity-90" />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -747,35 +1004,58 @@ export default function CitizenDashboard() {
                 {/* FILE ATTACHMENTS (Image, Supporting Document) */}
                 <div className="grid grid-cols-2 gap-4">
                   
-                  {/* Photo upload */}
+                  {/* Photo upload with visual preview box */}
                   <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-400 block">Attach Photo</span>
-                    <label className="border border-dashed border-white/10 bg-slate-900/30 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-white/20 transition h-20 overflow-hidden relative">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        disabled={isSubmitting} 
-                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                        className="hidden" 
-                      />
-                      {imageFile ? (
-                        <div className="flex items-center gap-1.5 text-xs text-blue-300 font-semibold px-2">
-                          <ImageIcon className="w-4 h-4 text-blue-400" />
-                          <span className="truncate max-w-[120px]">{imageFile.name}</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center text-slate-500">
+                    <span className="text-xs font-bold text-muted-foreground block">
+                      {language === "hi" ? "फोटो संलग्न करें" : "Attach Photo"}
+                    </span>
+                    
+                    {imagePreviewUrl ? (
+                      /* Visual Image Preview Box with cancel button */
+                      <div className="relative w-full h-24 rounded-2xl overflow-hidden border border-border bg-background shadow-md group">
+                        <Image 
+                          src={imagePreviewUrl} 
+                          alt="Photo Preview" 
+                          fill 
+                          className="object-cover" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImageFile(null);
+                            if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+                            setImagePreviewUrl(null);
+                          }}
+                          className="absolute top-1.5 right-1.5 p-1 bg-black/70 hover:bg-black/90 text-white rounded-full transition shadow"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="border border-dashed border-border bg-background/50 hover:bg-muted rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer transition h-24 overflow-hidden">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          disabled={isSubmitting} 
+                          onChange={handleImageChange}
+                          className="hidden" 
+                        />
+                        <div className="flex flex-col items-center text-muted-foreground">
                           <Upload className="w-4 h-4 mb-1" />
-                          <span className="text-[10px]">Photo Upload</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {language === "hi" ? "फोटो डालें" : "Photo Upload"}
+                          </span>
                         </div>
-                      )}
-                    </label>
+                      </label>
+                    )}
                   </div>
 
                   {/* Document upload */}
                   <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-400 block">Supporting Docs</span>
-                    <label className="border border-dashed border-white/10 bg-slate-900/30 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-white/20 transition h-20 overflow-hidden relative">
+                    <span className="text-xs font-bold text-muted-foreground block">
+                      {language === "hi" ? "दस्तावेज" : "Supporting Docs"}
+                    </span>
+                    <label className="border border-dashed border-border bg-background/50 hover:bg-muted rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer transition h-24 overflow-hidden relative">
                       <input 
                         type="file" 
                         accept=".pdf,.doc,.docx,.txt" 
@@ -784,14 +1064,16 @@ export default function CitizenDashboard() {
                         className="hidden" 
                       />
                       {docFile ? (
-                        <div className="flex items-center gap-1.5 text-xs text-blue-300 font-semibold px-2">
-                          <FileText className="w-4 h-4 text-blue-400" />
-                          <span className="truncate max-w-[120px]">{docFile.name}</span>
+                        <div className="flex flex-col items-center justify-center gap-1.5 text-[10px] text-primary font-bold px-2 w-full text-center">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <span className="truncate max-w-full block">{docFile.name}</span>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center text-slate-500">
+                        <div className="flex flex-col items-center text-muted-foreground">
                           <Upload className="w-4 h-4 mb-1" />
-                          <span className="text-[10px]">PDF, Word, Text</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {language === "hi" ? "फ़ाइल अपलोड" : "PDF, Word, Text"}
+                          </span>
                         </div>
                       )}
                     </label>
@@ -802,20 +1084,20 @@ export default function CitizenDashboard() {
               </form>
 
               {/* Submit footer bar */}
-              <div className="p-6 border-t border-white/5 bg-slate-950/80 sticky bottom-0 z-20">
+              <div className="p-6 border-t border-border bg-card/95 sticky bottom-0 z-20 backdrop-blur-md">
                 <button
                   onClick={handleSubmitSuggestion}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 hover:-translate-y-[1px] disabled:opacity-50 disabled:-translate-y-0 transition"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/10 disabled:opacity-50 transition"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Uploading Media & AI Ingesting...
+                      <span>Ingesting Media into AI Model...</span>
                     </>
                   ) : (
                     <>
-                      Submit Suggestion to AI Engine
+                      <span>{language === "hi" ? "शिकायत एआई इंजन में जमा करें" : "Submit Suggestion to AI"}</span>
                       <Send className="w-4 h-4" />
                     </>
                   )}
@@ -828,7 +1110,7 @@ export default function CitizenDashboard() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="w-full py-6 border-t border-white/5 text-center text-xs text-muted-foreground mt-8 relative z-10 bg-slate-950/20">
+      <footer className="w-full py-6 border-t border-border/40 text-center text-xs text-muted-foreground mt-8 relative z-10 bg-card/25 backdrop-blur-sm font-semibold">
         <p>© 2026 JanSwar AI Constituency Management Systems. Patna District Division.</p>
       </footer>
 

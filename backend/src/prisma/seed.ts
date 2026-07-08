@@ -1,4 +1,5 @@
 import { PrismaClient, Role } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -121,37 +122,55 @@ async function main() {
   // 3. Seed Users (Citizen, MP, Admin)
   console.log("Creating default seed users...");
 
+  const hashedPassword = await bcrypt.hash("password123", 10);
+
   const users = [
     {
       fullName: "JanSwar Citizen Test",
       email: "citizen@janswar.ai",
       phoneNumber: "9876543210",
       role: Role.CITIZEN,
+      passwordHash: hashedPassword,
+      city: "Patna Sadar",
+      state: "Bihar",
     },
     {
       fullName: "Honorable MP Patna",
       email: "mp@patna.janswar.ai",
       phoneNumber: "9876543211",
       role: Role.MP,
+      passwordHash: hashedPassword,
+      city: "Patna",
+      state: "Bihar",
     },
     {
       fullName: "Patna District Admin",
       email: "admin@patna.janswar.ai",
       phoneNumber: "9876543212",
       role: Role.DISTRICT_ADMIN,
+      passwordHash: hashedPassword,
+      city: "Patna",
+      state: "Bihar",
     },
     {
       fullName: "Super Admin",
       email: "super@janswar.ai",
       phoneNumber: "9876543213",
       role: Role.SUPER_ADMIN,
+      passwordHash: hashedPassword,
+      city: "Patna",
+      state: "Bihar",
     },
   ];
 
   for (const user of users) {
     await prisma.user.upsert({
-      where: { phoneNumber: user.phoneNumber },
-      update: {},
+      where: { email: user.email },
+      update: {
+        passwordHash: user.passwordHash,
+        city: user.city,
+        state: user.state,
+      },
       create: user,
     });
   }
