@@ -10,12 +10,12 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/authStore";
 import { api } from "../../services/authService";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  LogOut, MapPin, Calendar, Clock, CheckCircle2, AlertCircle, 
+import {
+  LogOut, MapPin, Calendar, Clock, CheckCircle2, AlertCircle,
   Loader2, Sparkles, X, ListFilter, Activity, LayoutDashboard,
   Search, ShieldAlert, Check, TrendingUp, BarChart3, Users
 } from "lucide-react";
-import { 
+import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from "recharts";
 
@@ -76,12 +76,12 @@ export default function MPDashboard() {
   const [blocksData, setBlocksData] = useState<BlockMetric[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  
+
   // UI filter states
   const [activeTab, setActiveTab] = useState<"overview" | "suggestions" | "recommendations">("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // Selected interactive SVG Map item
   const [selectedMapVillage, setSelectedMapVillage] = useState<any>({
     name: "Kandap Village",
@@ -94,7 +94,7 @@ export default function MPDashboard() {
     health: 0.1,
     education: 0.1
   });
-  
+
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -212,8 +212,8 @@ export default function MPDashboard() {
   // Filter items
   const filteredSuggestions = suggestions.filter(s => {
     const matchesCategory = categoryFilter === "ALL" || s.category?.name.toUpperCase() === categoryFilter.toUpperCase();
-    const matchesSearch = searchQuery === "" || 
-      s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = searchQuery === "" ||
+      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (s.village?.name && s.village.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
@@ -255,8 +255,8 @@ export default function MPDashboard() {
             </div>
             <span className="max-w-[150px] truncate font-medium">{user.fullName}</span>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleLogout}
             className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-rose-400 transition"
             title="Log Out"
@@ -268,7 +268,7 @@ export default function MPDashboard() {
 
       {/* Main dashboard content */}
       <main className="w-full max-w-7xl mx-auto px-6 py-8 flex-1 relative z-10">
-        
+
         {/* Top summary row */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
@@ -277,19 +277,19 @@ export default function MPDashboard() {
           </div>
 
           <div className="flex gap-2.5 bg-slate-900/60 p-1.5 rounded-2xl border border-white/5">
-            <button 
+            <button
               onClick={() => setActiveTab("overview")}
               className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "overview" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
             >
               Overview Map
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("suggestions")}
               className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "suggestions" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
             >
               Citizen Suggestions ({suggestions.length})
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab("recommendations")}
               className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "recommendations" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
             >
@@ -313,10 +313,10 @@ export default function MPDashboard() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            
+
             {/* OVERVIEW TAB */}
             {activeTab === "overview" && (
-              <motion.div 
+              <motion.div
                 key="overview"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -362,7 +362,7 @@ export default function MPDashboard() {
 
                 {/* GIS Maps & Interactive Region Details row */}
                 <div className="grid lg:grid-cols-12 gap-6">
-                  
+
                   {/* Custom Map Box */}
                   <div className="lg:col-span-8 glass-panel rounded-3xl p-6 border border-white/5">
                     <div className="flex items-center justify-between mb-4">
@@ -384,36 +384,36 @@ export default function MPDashboard() {
                           {/* Define map shadows */}
                           <defs>
                             <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-                              <feDropShadow dx="2" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.5"/>
+                              <feDropShadow dx="2" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.5" />
                             </filter>
                           </defs>
 
                           {/* Danapur Block Outline */}
-                          <path 
-                            d="M30,80 L180,40 L210,120 L130,170 L50,140 Z" 
-                            fill="rgba(59, 130, 246, 0.05)" 
-                            stroke="rgba(255,255,255,0.1)" 
-                            strokeWidth="2" 
+                          <path
+                            d="M30,80 L180,40 L210,120 L130,170 L50,140 Z"
+                            fill="rgba(59, 130, 246, 0.05)"
+                            stroke="rgba(255,255,255,0.1)"
+                            strokeWidth="2"
                             filter="url(#shadow)"
                             className="hover:fill-blue-500/10 transition cursor-pointer"
                           />
                           <text x="75" y="60" fill="rgba(255,255,255,0.2)" fontSize="10" fontWeight="bold" letterSpacing="1">DANAPUR</text>
 
                           {/* Patna Sadar Outline */}
-                          <path 
-                            d="M180,40 L300,50 L270,150 L210,120 Z" 
-                            fill="rgba(99, 102, 241, 0.05)" 
-                            stroke="rgba(255,255,255,0.1)" 
+                          <path
+                            d="M180,40 L300,50 L270,150 L210,120 Z"
+                            fill="rgba(99, 102, 241, 0.05)"
+                            stroke="rgba(255,255,255,0.1)"
                             strokeWidth="2"
                             className="hover:fill-indigo-500/10 transition cursor-pointer"
                           />
                           <text x="210" y="70" fill="rgba(255,255,255,0.2)" fontSize="10" fontWeight="bold" letterSpacing="1">PATNA SADAR</text>
 
                           {/* Sampatchak Outline */}
-                          <path 
-                            d="M270,150 L420,110 L400,240 L290,260 L230,190 Z" 
-                            fill="rgba(168, 85, 247, 0.05)" 
-                            stroke="rgba(255,255,255,0.1)" 
+                          <path
+                            d="M270,150 L420,110 L400,240 L290,260 L230,190 Z"
+                            fill="rgba(168, 85, 247, 0.05)"
+                            stroke="rgba(255,255,255,0.1)"
                             strokeWidth="2"
                             className="hover:fill-purple-500/10 transition cursor-pointer"
                           />
@@ -421,26 +421,26 @@ export default function MPDashboard() {
 
                           {/* Draw Village Dots */}
                           {mockVillages.map((v) => (
-                            <g 
-                              key={v.name} 
+                            <g
+                              key={v.name}
                               onClick={() => setSelectedMapVillage(v)}
                               className="cursor-pointer"
                             >
-                              <circle 
-                                cx={v.cx} 
-                                cy={v.cy} 
-                                r={selectedMapVillage?.name === v.name ? "9" : "6"} 
-                                fill={getGapColor(v.gap)} 
+                              <circle
+                                cx={v.cx}
+                                cy={v.cy}
+                                r={selectedMapVillage?.name === v.name ? "9" : "6"}
+                                fill={getGapColor(v.gap)}
                                 className="transition-all hover:r-9 hover:stroke-white hover:stroke-2"
                                 stroke={selectedMapVillage?.name === v.name ? "#ffffff" : "rgba(255,255,255,0.2)"}
                                 strokeWidth={selectedMapVillage?.name === v.name ? "2" : "1"}
                               />
-                              <text 
-                                x={v.cx} 
-                                y={v.cy - 12} 
-                                textAnchor="middle" 
-                                fill="#94a3b8" 
-                                fontSize="8" 
+                              <text
+                                x={v.cx}
+                                y={v.cy - 12}
+                                textAnchor="middle"
+                                fill="#94a3b8"
+                                fontSize="8"
                                 fontWeight="semibold"
                                 className="pointer-events-none select-none bg-slate-900"
                               >
@@ -481,7 +481,7 @@ export default function MPDashboard() {
                         {/* Access scores */}
                         <div className="space-y-2 pt-2">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Access Indicators (out of 10)</span>
-                          
+
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
                               <span className="text-slate-400">Road Quality</span>
@@ -526,7 +526,7 @@ export default function MPDashboard() {
                       </div>
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => {
                         setActiveTab("suggestions");
                         setSearchQuery(selectedMapVillage.name);
@@ -541,7 +541,7 @@ export default function MPDashboard() {
 
                 {/* Bottom Charts Row */}
                 <div className="grid md:grid-cols-12 gap-6">
-                  
+
                   {/* Category Distribution Chart */}
                   <div className="md:col-span-8 glass-panel rounded-3xl p-6 border border-white/5">
                     <h3 className="font-bold text-base text-white mb-6 flex items-center gap-2">
@@ -554,7 +554,7 @@ export default function MPDashboard() {
                           <BarChart data={categoriesData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                             <XAxis dataKey="category" stroke="#64748b" fontSize={10} tickLine={false} />
                             <YAxis stroke="#64748b" fontSize={10} tickLine={false} allowDecimals={false} />
-                            <Tooltip 
+                            <Tooltip
                               contentStyle={{ backgroundColor: "#0f172a", borderColor: "rgba(255,255,255,0.08)", borderRadius: "12px", color: "#fff" }}
                               cursor={{ fill: "rgba(255,255,255,0.02)" }}
                             />
@@ -599,7 +599,7 @@ export default function MPDashboard() {
 
             {/* SUGGESTIONS TAB */}
             {activeTab === "suggestions" && (
-              <motion.div 
+              <motion.div
                 key="suggestions"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -610,7 +610,7 @@ export default function MPDashboard() {
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6 pb-6 border-b border-white/5">
                   <div className="flex-1 relative max-w-sm">
                     <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
-                    <input 
+                    <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -620,14 +620,14 @@ export default function MPDashboard() {
                   </div>
 
                   <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar">
-                    <button 
+                    <button
                       onClick={() => setCategoryFilter("ALL")}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter === "ALL" ? "bg-blue-600 border-blue-500 text-white" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}
                     >
                       All
                     </button>
                     {categoriesData.map(c => (
-                      <button 
+                      <button
                         key={c.category}
                         onClick={() => setCategoryFilter(c.category)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter.toUpperCase() === c.category.toUpperCase() ? "bg-blue-600 border-blue-500 text-white" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}
@@ -657,10 +657,9 @@ export default function MPDashboard() {
                               </span>
                             )}
                             {item.sentiment && (
-                              <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                                item.sentiment === "POSITIVE" ? "bg-emerald-500/10 text-emerald-400" :
+                              <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${item.sentiment === "POSITIVE" ? "bg-emerald-500/10 text-emerald-400" :
                                 item.sentiment === "NEGATIVE" ? "bg-rose-500/10 text-rose-400" : "bg-slate-500/10 text-slate-400"
-                              }`}>
+                                }`}>
                                 {item.sentiment}
                               </span>
                             )}
@@ -687,7 +686,7 @@ export default function MPDashboard() {
                         {/* Status / Priority Score */}
                         <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-white/5">
                           {getStatusBadge(item.status)}
-                          
+
                           {item.priorityScore && (
                             <div className="flex items-center gap-1 text-xs text-indigo-300 font-semibold bg-indigo-500/5 px-2.5 py-1 rounded-lg border border-indigo-500/10">
                               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
@@ -704,7 +703,7 @@ export default function MPDashboard() {
 
             {/* RECOMMENDATIONS TAB */}
             {activeTab === "recommendations" && (
-              <motion.div 
+              <motion.div
                 key="recommendations"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -751,7 +750,7 @@ export default function MPDashboard() {
                         </div>
 
                         {rec.status === "PENDING" && (
-                          <button 
+                          <button
                             onClick={() => handleApproveRecommendation(rec.id)}
                             className="flex items-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow shadow-blue-500/10 hover:shadow-blue-500/20 transition"
                           >
@@ -770,16 +769,7 @@ export default function MPDashboard() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-6 border-t border-white/5 relative z-10 bg-slate-950/40">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
-          <p>© 2026 JanSwar AI. All Rights Reserved. Built for Smarter District & MP Constituency Planning.</p>
-          <div className="flex gap-4">
-            <span className="hover:text-white cursor-pointer">Constituency Maps</span>
-            <span className="hover:text-white cursor-pointer">AI Scoring Models</span>
-          </div>
-        </div>
-      </footer>
+
 
     </div>
   );
