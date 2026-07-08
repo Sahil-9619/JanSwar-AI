@@ -1,8 +1,85 @@
 import { Request, Response } from "express";
 import { prisma } from "../index";
+import jwt from "jsonwebtoken";
+import { Role } from "@prisma/client";
 
-// ME PROFILE CONTROLLER
-// Retrieves profile details from PostgreSQL database matching the authenticated Clerk user
+const otpStore = new Map<string, { otp: string; expiresAt: number; role?: Role; fullName?: string }>();
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_for_dev";
+
+export async function requestOtp(req: Request, res: Response) {
+  const { email, role, fullName } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  // Generate 6 digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins
+
+  otpStore.set(email, { otp, expiresAt, role, fullName });
+
+  console.log(`\n\n==========================`);
+  console.log(`[DEVELOPMENT] OTP for ${email}: ${otp}`);
+  console.log(`==========================\n\n`);
+
+  try {
+    res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Error sending OTP via email:", error);
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+}
+
+export async function verifyOtp(req: Request, res: Response) {
+  const { email, otp } = req.body;
+  
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Email and OTP are required" });
+  }
+
+  const record = otpStore.get(email);
+  if (!record) {
+    return res.status(400).json({ error: "No OTP requested for this email" });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    otpStore.delete(email);
+    return res.status(400).json({ error: "OTP has expired" });
+  }
+
+  if (record.otp !== otp) {
+    return res.status(400).json({ error: "Invalid OTP" });
+  }
+
+  otpStore.delete(email);
+
+  try {
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create user if not exists using provided role/fullName or defaults
+      user = await prisma.user.create({
+        data: {
+          email,
+          fullName: record.fullName || email.split("@")[0],
+          role: record.role || Role.CITIZEN,
+        },
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({ token, user });
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    res.status(500).json({ error: "Failed to verify OTP" });
+  }
+}
+
 export async function me(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ error: "Unauthenticated" });

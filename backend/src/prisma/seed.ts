@@ -123,28 +123,24 @@ async function main() {
 
   const users = [
     {
-      clerkId: "user_mock_citizen_123",
       fullName: "JanSwar Citizen Test",
       email: "citizen@janswar.ai",
       phoneNumber: "9876543210",
       role: Role.CITIZEN,
     },
     {
-      clerkId: "user_mock_mp_456",
       fullName: "Honorable MP Patna",
       email: "mp@patna.janswar.ai",
       phoneNumber: "9876543211",
       role: Role.MP,
     },
     {
-      clerkId: "user_mock_admin_789",
       fullName: "Patna District Admin",
       email: "admin@patna.janswar.ai",
       phoneNumber: "9876543212",
       role: Role.DISTRICT_ADMIN,
     },
     {
-      clerkId: "user_mock_super_000",
       fullName: "Super Admin",
       email: "super@janswar.ai",
       phoneNumber: "9876543213",
@@ -155,9 +151,7 @@ async function main() {
   for (const user of users) {
     await prisma.user.upsert({
       where: { phoneNumber: user.phoneNumber },
-      update: {
-        clerkId: user.clerkId,
-      },
+      update: {},
       create: user,
     });
   }

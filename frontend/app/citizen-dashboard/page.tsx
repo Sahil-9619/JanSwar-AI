@@ -1,15 +1,17 @@
 "use client";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageToggle } from "../../components/LanguageToggle";
+import { useLanguage } from "../../context/LanguageContext";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useUser, useClerk } from "@clerk/nextjs";
 import { useAuthStore } from "../../store/authStore";
 import { api } from "../../services/authService";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  LogOut, Plus, MapPin, Calendar, Clock, CheckCircle2, 
+  LogOut, Plus, MapPin, Calendar, Clock, 
   AlertCircle, Mic, Square, Trash2, Upload, FileText, Image as ImageIcon,
-  Loader2, Sparkles, Send, X, HelpCircle, User, ListFilter, Activity
+  Loader2, Sparkles, Send, X, User, ListFilter, Activity
 } from "lucide-react";
 
 interface Suggestion {
@@ -31,9 +33,8 @@ interface Suggestion {
 
 export default function CitizenDashboard() {
   const router = useRouter();
-  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
-  const { signOut } = useClerk();
-  const { user, checkAuth, isLoading: isDbUserLoading } = useAuthStore();
+  const { t } = useLanguage();
+  const { user, token, logout, isLoading: isAuthLoading, checkAuth } = useAuthStore();
 
   // Suggestion list states
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -77,14 +78,17 @@ export default function CitizenDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Sync profile & fetch data when Clerk session is ready
+  // Auth verification & data fetching
   useEffect(() => {
-    if (isClerkLoaded && clerkUser) {
+    if (!token) {
+      router.push('/login');
+    } else if (!user) {
       checkAuth();
+    } else if (user.role === "CITIZEN") {
       fetchSuggestions();
       fetchMetadata();
     }
-  }, [clerkUser, isClerkLoaded]);
+  }, [token, user, checkAuth, router]);
 
   // Client-side role redirection guard
   useEffect(() => {
@@ -319,42 +323,43 @@ export default function CitizenDashboard() {
     return `${m}:${s}`;
   };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    logout();
     router.push("/login");
   };
 
-  if (!isClerkLoaded || isDbUserLoading || !user) {
+  if (isAuthLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/20 via-slate-950 to-black text-white flex flex-col justify-between">
-      
-      {/* Background glowing lights */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between overflow-x-hidden">
+      {/* Ambient background glow */}
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Nav */}
-      <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-white/5 relative z-10">
+      {/* Navigation */}
+      <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-border relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <span className="font-bold text-lg text-white">JS</span>
           </div>
           <div>
-            <h1 className="font-extrabold text-lg text-white">
-              JanSwar <span className="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">AI</span>
+            <h1 className="font-extrabold text-lg text-foreground">
+              JanSwar <span className="gradient-text">AI</span>
             </h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Citizen dashboard</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">{t("dashboard.citizenTitle")}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300">
-            <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-semibold">
+          <LanguageToggle />
+          <ThemeToggle />
+          <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
               {user?.fullName.charAt(0) || "C"}
             </div>
             <span className="max-w-[120px] truncate font-medium">{user?.fullName}</span>

@@ -1,19 +1,22 @@
 "use client";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageToggle } from "../../components/LanguageToggle";
+import { useLanguage } from "../../context/LanguageContext";
+import { Landmark } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser, useClerk } from "@clerk/nextjs";
+
 import { useAuthStore } from "../../store/authStore";
 import { api } from "../../services/authService";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LogOut, MapPin, Calendar, Clock, CheckCircle2, AlertCircle, 
   Loader2, Sparkles, X, ListFilter, Activity, LayoutDashboard,
-  Search, ShieldAlert, Check, TrendingUp, BarChart3, Users, Landmark
+  Search, ShieldAlert, Check, TrendingUp, BarChart3, Users
 } from "lucide-react";
 import { 
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  PieChart, Pie
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from "recharts";
 
 interface Suggestion {
@@ -56,9 +59,7 @@ interface BlockMetric {
 
 export default function MPDashboard() {
   const router = useRouter();
-  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
-  const { signOut } = useClerk();
-  const { user, checkAuth, isLoading: isDbUserLoading } = useAuthStore();
+  const { user, token, logout, isLoading: isAuthLoading, checkAuth } = useAuthStore();
 
   // Hydration guard
   const [isMounted, setIsMounted] = useState(false);
@@ -97,27 +98,35 @@ export default function MPDashboard() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Role verification & data synchronization
+  // Auth verification & data synchronization
   useEffect(() => {
-    if (isClerkLoaded && clerkUser) {
+    if (!token) {
+      router.push('/login');
+    } else if (!user) {
       checkAuth();
     }
-  }, [clerkUser, isClerkLoaded]);
+  }, [token, user, checkAuth, router]);
 
-  // Role guard redirect
+  // Role guard redirect (now based on user.role after OTP verification)
   useEffect(() => {
     if (user) {
       if (user.role === "CITIZEN") {
         router.push("/citizen-dashboard");
       } else if (user.role === "DISTRICT_ADMIN" || user.role === "SUPER_ADMIN") {
         router.push("/admin-dashboard");
-      } else {
-        fetchAllData();
       }
     }
   }, [user, router]);
 
+  // Fetch dashboard data when authenticated and role is not a guard role
+  useEffect(() => {
+    if (token && user && user.role !== "CITIZEN" && user.role !== "DISTRICT_ADMIN" && user.role !== "SUPER_ADMIN") {
+      fetchAllData();
+    }
+  }, [token, user]);
+
   const fetchAllData = async () => {
+    console.log('Starting fetchAllData');
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -146,6 +155,7 @@ export default function MPDashboard() {
       setErrorMessage("Unable to sync constituency metrics from the gateway.");
     } finally {
       setIsLoading(false);
+      console.log('fetchAllData completed, isLoading:', false);
     }
   };
 
@@ -161,7 +171,7 @@ export default function MPDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    logout();
     router.push("/login");
   };
 
@@ -209,36 +219,38 @@ export default function MPDashboard() {
     return matchesCategory && matchesSearch;
   });
 
-  if (!isClerkLoaded || isDbUserLoading || !user) {
+  if (isAuthLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/20 via-slate-950 to-black text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between overflow-x-hidden">
       {/* Background glow */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Navigation */}
-      <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-white/5 relative z-10">
+      <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-border relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Landmark className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
+            <Landmark className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-extrabold text-lg text-white">
-              JanSwar <span className="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">AI</span>
+            <h1 className="font-extrabold text-lg text-foreground">
+              JanSwar <span className="gradient-text">AI</span>
             </h1>
-            <p className="text-[10px] text-indigo-400 uppercase tracking-widest font-semibold">MP constituency grid</p>
+            <p className="text-[10px] text-primary uppercase tracking-widest font-semibold">MP constituency grid</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300">
-            <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-semibold">
+          <LanguageToggle />
+          <ThemeToggle />
+          <div className="flex items-center gap-2.5 bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
               MP
             </div>
             <span className="max-w-[150px] truncate font-medium">{user.fullName}</span>

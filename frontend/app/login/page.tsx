@@ -1,71 +1,175 @@
 "use client";
 
-import { SignIn } from "@clerk/nextjs";
-import { motion } from "framer-motion";
-
-const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
-const isClerkConfigured = clerkKey.startsWith("pk_") && !clerkKey.includes("placeholder");
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore, Role } from "../../store/authStore";
+import { Loader2, Mail, KeyRound, User as UserIcon, Shield } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageToggle } from "../../components/LanguageToggle";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/40 via-slate-950 to-black relative px-4 py-12">
-      {/* Background glowing effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [role, setRole] = useState<Role>("CITIZEN");
+  const [step, setStep] = useState<"REQUEST" | "VERIFY">("REQUEST");
+  
+  const { requestOtp, verifyOtp, isLoading, error, clearError, user } = useAuthStore();
+  const router = useRouter();
+  const { t } = useLanguage();
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md flex flex-col items-center"
-      >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
-            <span className="font-bold text-xl text-white">JS</span>
+  // Redirect if already logged in
+  if (user) {
+    if (user.role === "MP") router.push("/mp-dashboard");
+    else router.push("/citizen-dashboard");
+  }
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await requestOtp(email, role);
+      setStep("VERIFY");
+    } catch (err) {
+      // Error is handled in store
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) return;
+    try {
+      await verifyOtp(email, otp);
+    } catch (err) {
+      // Error is handled in store
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Top right toggles */}
+      <div className="absolute top-4 right-4 flex gap-2 z-50">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
+      
+      {/* Home link */}
+      <div className="absolute top-4 left-4 z-50">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative w-8 h-8 flex items-center justify-center">
+            <Image src="/JS_logo.png" alt="JanSwar Logo" fill className="object-contain" priority />
           </div>
-          <h1 className="font-extrabold text-2xl tracking-tight text-white">
-            Welcome to JanSwar <span className="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">AI</span>
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1.5 uppercase tracking-widest font-semibold">Secure Officer & Citizen Portal</p>
+          <span className="font-extrabold text-xl tracking-tight text-foreground">
+            JanSwar <span className="gradient-text">AI</span>
+          </span>
+        </Link>
+      </div>
+
+      <div className="max-w-md w-full glass-panel rounded-3xl p-8 relative z-10">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t("login.welcome")}</h1>
+          <p className="text-muted-foreground text-sm">{t("login.desc")}</p>
         </div>
 
-        <div className="glass-panel rounded-3xl p-4 border border-white/5 shadow-2xl relative flex justify-center w-full">
-          {isClerkConfigured ? (
-            <SignIn
-              signUpUrl="/register"
-              forceRedirectUrl="/dashboard"
-              appearance={{
-                variables: {
-                  colorPrimary: "#3b82f6",
-                  colorBackground: "#090d16",
-                  colorInputBackground: "#111827",
-                  colorInputText: "#ffffff",
-                  colorText: "#ffffff",
-                  colorTextSecondary: "#9ca3af",
-                  colorBorder: "#1f2937",
-                },
-                elements: {
-                  card: "bg-transparent border-none shadow-none",
-                  headerTitle: "hidden",
-                  headerSubtitle: "hidden",
-                  socialButtonsBlockButton: "border border-white/10 bg-slate-900/50 hover:bg-slate-800/50 text-white transition",
-                  formButtonPrimary: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg border-none shadow-blue-500/10 hover:shadow-blue-500/20 transition-all",
-                  footerActionLink: "text-blue-400 hover:text-blue-300",
-                  identityPreviewText: "text-white",
-                  identityPreviewEditButton: "text-blue-400 hover:text-blue-300",
-                }
-              }}
-            />
-          ) : (
-            <div className="p-6 text-center">
-              <h2 className="text-lg font-bold text-white">Clerk is not configured</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Add real NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY values in the root .env file, then rebuild Docker.
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-3 rounded-lg text-sm mb-6 flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={clearError} className="hover:text-rose-600">&times;</button>
+          </div>
+        )}
+
+        {step === "REQUEST" ? (
+          <form onSubmit={handleRequestOtp} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t("login.emailLabel")}</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-input/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder={t("login.emailPlaceholder")}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t("login.roleLabel")}</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole("CITIZEN")}
+                  className={`py-3 rounded-xl border flex items-center justify-center gap-2 transition ${role === "CITIZEN" ? "bg-primary/10 border-primary text-primary font-semibold" : "bg-card border-border text-muted-foreground hover:bg-accent"}`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  {t("login.citizen")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("MP")}
+                  className={`py-3 rounded-xl border flex items-center justify-center gap-2 transition ${role === "MP" ? "bg-primary/10 border-primary text-primary font-semibold" : "bg-card border-border text-muted-foreground hover:bg-accent"}`}
+                >
+                  <Shield className="w-4 h-4" />
+                  {t("login.mp")}
+                </button>
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={isLoading || !email}
+              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-xl py-3 font-medium flex justify-center items-center gap-2 transition shadow-lg shadow-primary/20"
+            >
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {t("login.sendOtp")}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">{t("login.otpLabel")}</label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full bg-input/50 border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-center text-lg tracking-widest font-semibold"
+                  placeholder={t("login.otpPlaceholder")}
+                  maxLength={6}
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                {t("login.otpSent").replace("{email}", email)}
               </p>
             </div>
-          )}
-        </div>
-      </motion.div>
+            
+            <button
+              type="submit"
+              disabled={isLoading || !otp}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl py-3 font-medium flex justify-center items-center gap-2 transition shadow-lg shadow-emerald-600/20"
+            >
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {t("login.verifyOtp")}
+            </button>
+            
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => setStep("REQUEST")}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                {t("login.changeEmail")}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

@@ -9,21 +9,17 @@ export const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach dynamic Clerk JWT to requests
+// Request Interceptor: Attach JWT token to requests
 api.interceptors.request.use(
-  async (config) => {
+  (config) => {
     if (typeof window !== "undefined") {
       try {
-        // Clerk puts the main client instance on window when loaded
-        const clerk = (window as any).Clerk;
-        if (clerk && clerk.session) {
-          const token = await clerk.session.getToken();
-          if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
+        const token = localStorage.getItem("token");
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (error) {
-        console.error("Error retrieving Clerk session token:", error);
+        console.error("Error retrieving token:", error);
       }
     }
     return config;
