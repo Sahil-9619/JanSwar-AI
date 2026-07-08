@@ -94,6 +94,17 @@ The easiest way to boot the entire stack is using Docker Compose.
 
 ---
 
+## 🔑 Default Credentials
+
+Use the following default accounts to access and test the platform roles:
+
+| Role / Dashboard | Email | Password |
+| :--- | :--- | :--- |
+| **MP / Admin Portal** | `admin@janswar.com` | `Admin@123` |
+| **Demo Citizen Portal** | `demo@user.com` | `123456` |
+
+---
+
 ## 🧪 Development & Testing
 
 If you want to run services individually outside of Docker:

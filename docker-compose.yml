@@ -68,7 +68,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    command: sh -c "npx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && npm run dev"
+    command: sh -c "npx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && npx prisma db seed && npm run dev"
     depends_on:
       db:
         condition: service_healthy
