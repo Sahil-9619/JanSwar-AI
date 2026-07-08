@@ -56,8 +56,12 @@ JanSwar AI is divided into distinct microservices managed entirely via Docker:
 Environment variables have been cleanly separated into their respective service directories.
 
 1. **Backend:** Copy `backend/.env.example` to `backend/.env` and update secrets.
+   - For local development with Docker Compose, use a Postgres URL pointing to the `db` service.
+   - For Neon production, replace `DATABASE_URL` with the Neon-provided connection string and include `sslmode=require`.
 2. **Frontend:** Copy `frontend/.env.example` to `frontend/.env.local`.
 3. **AI Service:** Copy `ai-service/.env.example` to `ai-service/.env` and add your Gemini API Key.
+
+> **Production note:** When using Neon, deploy the backend with a production environment that supplies `DATABASE_URL`; do not rely on the local `db` Docker Compose service.
 
 *(Note: There is no `.env` file in the root directory. `docker-compose.yml` automatically mounts the inner `.env` files into their respective containers.)*
 

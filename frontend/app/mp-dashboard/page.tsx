@@ -1,8 +1,8 @@
 "use client";
+import Image from "next/image";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { LanguageToggle } from "../../components/LanguageToggle";
 import { useLanguage } from "../../context/LanguageContext";
-import { Landmark } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -235,14 +235,14 @@ export default function MPDashboard() {
       {/* Navigation */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-border relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-            <Landmark className="w-5 h-5 text-primary-foreground" />
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-border bg-card/80 shadow-lg shadow-primary/10 flex items-center justify-center">
+            <Image src="/JS_logo.png" alt="JanSwar Logo" fill className="object-cover" priority />
           </div>
           <div>
             <h1 className="font-extrabold text-lg text-foreground">
               JanSwar <span className="gradient-text">AI</span>
             </h1>
-            <p className="text-[10px] text-primary uppercase tracking-widest font-semibold">MP constituency grid</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">MP constituency grid</p>
           </div>
         </div>
 
@@ -258,7 +258,7 @@ export default function MPDashboard() {
 
           <button
             onClick={handleLogout}
-            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-rose-400 transition"
+            className="p-2.5 rounded-xl bg-card/80 hover:bg-card/90 border border-border text-muted-foreground hover:text-rose-400 transition"
             title="Log Out"
           >
             <LogOut className="w-4 h-4" />
@@ -273,25 +273,25 @@ export default function MPDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight">Constituency Intelligence</h2>
-            <p className="text-sm text-slate-400 mt-1">Patna District MP Planning Desk • Active development heatmaps & AI prioritization</p>
+            <p className="text-sm text-muted-foreground mt-1">Patna District MP Planning Desk • Active development heatmaps & AI prioritization</p>
           </div>
 
-          <div className="flex gap-2.5 bg-slate-900/60 p-1.5 rounded-2xl border border-white/5">
+          <div className="flex gap-2.5 bg-card/90 p-1.5 rounded-2xl border border-border">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "overview" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "overview" ? "bg-primary text-background shadow-lg shadow-primary/10" : "text-muted-foreground hover:text-foreground"}`}
             >
               Overview Map
             </button>
             <button
               onClick={() => setActiveTab("suggestions")}
-              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "suggestions" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "suggestions" ? "bg-primary text-background shadow-lg shadow-primary/10" : "text-muted-foreground hover:text-foreground"}`}
             >
               Citizen Suggestions ({suggestions.length})
             </button>
             <button
               onClick={() => setActiveTab("recommendations")}
-              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "recommendations" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition ${activeTab === "recommendations" ? "bg-primary text-background shadow-lg shadow-primary/10" : "text-muted-foreground hover:text-foreground"}`}
             >
               AI Project Proposals ({recommendations.length})
             </button>
@@ -302,14 +302,14 @@ export default function MPDashboard() {
         {isLoading ? (
           <div className="min-h-[400px] flex flex-col items-center justify-center">
             <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-            <p className="text-slate-400 text-sm">Aggregating constituency metrics...</p>
+            <p className="text-muted-foreground text-sm">Aggregating constituency metrics...</p>
           </div>
         ) : errorMessage ? (
-          <div className="text-center py-20 bg-rose-950/5 border border-rose-500/10 rounded-3xl">
+          <div className="text-center py-20 bg-card/90 border border-border rounded-3xl">
             <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-            <h4 className="font-bold text-lg">System Sync Offline</h4>
-            <p className="text-slate-400 text-sm max-w-sm mx-auto mt-1">{errorMessage}</p>
-            <button onClick={fetchAllData} className="mt-6 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs hover:bg-white/10 transition">Re-establish Connection</button>
+            <h4 className="font-bold text-lg text-foreground">System Sync Offline</h4>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto mt-1">{errorMessage}</p>
+            <button onClick={fetchAllData} className="mt-6 px-4 py-2 bg-card/90 border border-border rounded-xl text-xs hover:bg-card transition">Re-establish Connection</button>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -325,17 +325,17 @@ export default function MPDashboard() {
               >
                 {/* Metrics Cards Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="glass-panel rounded-2xl p-5 border border-white/5 flex items-center justify-between">
+                  <div className="glass-panel rounded-2xl p-5 border border-border flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Constituency Voice</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Constituency Voice</span>
                       <span className="text-3xl font-extrabold mt-1 block">{metrics.total}</span>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400"><Users className="w-5 h-5" /></div>
                   </div>
 
-                  <div className="glass-panel rounded-2xl p-5 border border-white/5 flex items-center justify-between">
+                  <div className="glass-panel rounded-2xl p-5 border border-border flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Average Urgency Rate</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Average Urgency Rate</span>
                       <span className="text-3xl font-extrabold mt-1 block text-indigo-300">
                         {metrics.avgPriorityScore ? metrics.avgPriorityScore.toFixed(0) : 0}/100
                       </span>
@@ -343,17 +343,17 @@ export default function MPDashboard() {
                     <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400"><TrendingUp className="w-5 h-5" /></div>
                   </div>
 
-                  <div className="glass-panel rounded-2xl p-5 border border-white/5 flex items-center justify-between">
+                  <div className="glass-panel rounded-2xl p-5 border border-border flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Approved Projects</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Approved Projects</span>
                       <span className="text-3xl font-extrabold mt-1 block text-emerald-400">{metrics.approved}</span>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400"><CheckCircle2 className="w-5 h-5" /></div>
                   </div>
 
-                  <div className="glass-panel rounded-2xl p-5 border border-white/5 flex items-center justify-between">
+                  <div className="glass-panel rounded-2xl p-5 border border-border flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Pending Review</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Pending Review</span>
                       <span className="text-3xl font-extrabold mt-1 block text-amber-400">{metrics.pending}</span>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400"><Clock className="w-5 h-5" /></div>
@@ -364,11 +364,11 @@ export default function MPDashboard() {
                 <div className="grid lg:grid-cols-12 gap-6">
 
                   {/* Custom Map Box */}
-                  <div className="lg:col-span-8 glass-panel rounded-3xl p-6 border border-white/5">
+                  <div className="lg:col-span-8 glass-panel rounded-3xl p-6 border border-border">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="font-bold text-base text-white">Interactive Constituency Heatmap</h3>
-                        <p className="text-xs text-slate-400">Patna blocks: Sadar, Danapur, Sampatchak. Color indicates infrastructure gap level.</p>
+                        <h3 className="font-bold text-base text-foreground">Interactive Constituency Heatmap</h3>
+                        <p className="text-xs text-muted-foreground">Patna blocks: Sadar, Danapur, Sampatchak. Color indicates infrastructure gap level.</p>
                       </div>
                       <div className="flex items-center gap-4 text-[10px] font-semibold">
                         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Low Gap</span>
@@ -378,7 +378,7 @@ export default function MPDashboard() {
                     </div>
 
                     {/* SVG Map Canvas */}
-                    <div className="w-full bg-slate-950/50 rounded-2xl border border-white/5 flex items-center justify-center p-4 relative overflow-hidden h-[340px]">
+                    <div className="w-full bg-card/90 rounded-2xl border border-border flex items-center justify-center p-4 relative overflow-hidden h-[340px]">
                       {isMounted ? (
                         <svg viewBox="0 0 450 280" className="w-full h-full max-w-lg">
                           {/* Define map shadows */}
@@ -439,10 +439,10 @@ export default function MPDashboard() {
                                 x={v.cx}
                                 y={v.cy - 12}
                                 textAnchor="middle"
-                                fill="#94a3b8"
+                                fill="#475569"
                                 fontSize="8"
                                 fontWeight="semibold"
-                                className="pointer-events-none select-none bg-slate-900"
+                                className="pointer-events-none select-none"
                               >
                                 {v.name.split(" ")[0]}
                               </text>
@@ -458,66 +458,66 @@ export default function MPDashboard() {
                   </div>
 
                   {/* Active Map Detail Card */}
-                  <div className="lg:col-span-4 glass-panel rounded-3xl p-6 border border-white/5 flex flex-col justify-between">
+                  <div className="lg:col-span-4 glass-panel rounded-3xl p-6 border border-border flex flex-col justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-4">
                         <MapPin className="w-5 h-5 text-indigo-400" />
                         <div>
-                          <h4 className="font-bold text-white text-base">{selectedMapVillage.name}</h4>
-                          <span className="text-xs text-indigo-300 font-medium">{selectedMapVillage.block} Block</span>
+                          <h4 className="font-bold text-foreground text-base">{selectedMapVillage.name}</h4>
+                          <span className="text-xs text-indigo-500 font-medium">{selectedMapVillage.block} Block</span>
                         </div>
                       </div>
 
                       <div className="space-y-4 pt-2">
-                        <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
-                          <span className="text-slate-400">Total Population:</span>
-                          <span className="text-white font-bold">{selectedMapVillage.population.toLocaleString()}</span>
+                        <div className="flex justify-between items-center text-xs border-b border-border pb-2">
+                          <span className="text-muted-foreground">Total Population:</span>
+                          <span className="text-foreground font-bold">{selectedMapVillage.population.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center text-xs border-b border-white/5 pb-2">
-                          <span className="text-slate-400">Infrastructure Gap:</span>
-                          <span className="text-rose-400 font-bold font-mono">{(selectedMapVillage.gap * 100).toFixed(0)}%</span>
+                        <div className="flex justify-between items-center text-xs border-b border-border pb-2">
+                          <span className="text-muted-foreground">Infrastructure Gap:</span>
+                          <span className="text-rose-500 font-bold font-mono">{(selectedMapVillage.gap * 100).toFixed(0)}%</span>
                         </div>
 
                         {/* Access scores */}
                         <div className="space-y-2 pt-2">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Access Indicators (out of 10)</span>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Access Indicators (out of 10)</span>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Road Quality</span>
-                              <span className="text-white font-mono">{(selectedMapVillage.road * 10).toFixed(0)}/10</span>
+                              <span className="text-muted-foreground">Road Quality</span>
+                              <span className="text-foreground font-mono">{(selectedMapVillage.road * 10).toFixed(0)}/10</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
                               <div className="bg-blue-500 h-full" style={{ width: `${selectedMapVillage.road * 100}%` }} />
                             </div>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Clean Water Access</span>
-                              <span className="text-white font-mono">{(selectedMapVillage.water * 10).toFixed(0)}/10</span>
+                              <span className="text-muted-foreground">Clean Water Access</span>
+                              <span className="text-foreground font-mono">{(selectedMapVillage.water * 10).toFixed(0)}/10</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
                               <div className="bg-teal-500 h-full" style={{ width: `${selectedMapVillage.water * 100}%` }} />
                             </div>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Healthcare Access</span>
-                              <span className="text-white font-mono">{(selectedMapVillage.health * 10).toFixed(0)}/10</span>
+                              <span className="text-muted-foreground">Healthcare Access</span>
+                              <span className="text-foreground font-mono">{(selectedMapVillage.health * 10).toFixed(0)}/10</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
                               <div className="bg-red-500 h-full" style={{ width: `${selectedMapVillage.health * 100}%` }} />
                             </div>
                           </div>
 
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px]">
-                              <span className="text-slate-400">Education Access</span>
-                              <span className="text-white font-mono">{(selectedMapVillage.education * 10).toFixed(0)}/10</span>
+                              <span className="text-muted-foreground">Education Access</span>
+                              <span className="text-foreground font-mono">{(selectedMapVillage.education * 10).toFixed(0)}/10</span>
                             </div>
-                            <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
                               <div className="bg-amber-500 h-full" style={{ width: `${selectedMapVillage.education * 100}%` }} />
                             </div>
                           </div>
@@ -531,7 +531,7 @@ export default function MPDashboard() {
                         setActiveTab("suggestions");
                         setSearchQuery(selectedMapVillage.name);
                       }}
-                      className="mt-6 w-full py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-semibold transition"
+                      className="mt-6 w-full py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-xl text-xs font-semibold transition"
                     >
                       View Village Suggestions
                     </button>
@@ -543,8 +543,8 @@ export default function MPDashboard() {
                 <div className="grid md:grid-cols-12 gap-6">
 
                   {/* Category Distribution Chart */}
-                  <div className="md:col-span-8 glass-panel rounded-3xl p-6 border border-white/5">
-                    <h3 className="font-bold text-base text-white mb-6 flex items-center gap-2">
+                  <div className="md:col-span-8 glass-panel rounded-3xl p-6 border border-border">
+                    <h3 className="font-bold text-base text-foreground mb-6 flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-blue-400" />
                       Suggestion Category Distribution
                     </h3>
@@ -574,18 +574,18 @@ export default function MPDashboard() {
                   </div>
 
                   {/* Block Level Suggestions summary table */}
-                  <div className="md:col-span-4 glass-panel rounded-3xl p-6 border border-white/5">
-                    <h3 className="font-bold text-base text-white mb-4">Constituency Blocks</h3>
+                  <div className="md:col-span-4 glass-panel rounded-3xl p-6 border border-border">
+                    <h3 className="font-bold text-base text-foreground mb-4">Constituency Blocks</h3>
                     <div className="space-y-4 pt-2">
                       {blocksData.map((b) => (
-                        <div key={b.blockId} className="flex justify-between items-center text-xs p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div key={b.blockId} className="flex justify-between items-center text-xs p-3 rounded-xl bg-card/90 border border-border">
                           <div>
-                            <span className="font-bold text-slate-200 block">{b.blockName}</span>
-                            <span className="text-[10px] text-slate-500 mt-0.5 block">{b.suggestionsCount} Suggestions</span>
+                            <span className="font-bold text-foreground block">{b.blockName}</span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5 block">{b.suggestionsCount} Suggestions</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-indigo-300 font-bold block">{b.avgPriorityScore.toFixed(0)} Avg Priority</span>
-                            <span className="text-[10px] text-slate-400 block">Gap: {(b.avgInfrastructureGap * 100).toFixed(0)}%</span>
+                            <span className="text-blue-400 font-bold block">{b.avgPriorityScore.toFixed(0)} Avg Priority</span>
+                            <span className="text-[10px] text-muted-foreground block">Gap: {(b.avgInfrastructureGap * 100).toFixed(0)}%</span>
                           </div>
                         </div>
                       ))}
@@ -604,25 +604,25 @@ export default function MPDashboard() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="glass-panel rounded-3xl p-6 md:p-8 border border-white/5 min-h-[500px]"
+                className="glass-panel rounded-3xl p-6 md:p-8 border border-border min-h-[500px] bg-card/90"
               >
                 {/* Search / Filters Bar */}
-                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6 pb-6 border-b border-white/5">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6 pb-6 border-b border-border">
                   <div className="flex-1 relative max-w-sm">
-                    <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
+                    <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search suggestions or villages..."
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full bg-card/90 border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
 
                   <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar">
                     <button
                       onClick={() => setCategoryFilter("ALL")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter === "ALL" ? "bg-blue-600 border-blue-500 text-white" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter === "ALL" ? "bg-primary border-primary text-background" : "bg-card/80 border-border text-muted-foreground hover:text-foreground"}`}
                     >
                       All
                     </button>
@@ -630,7 +630,7 @@ export default function MPDashboard() {
                       <button
                         key={c.category}
                         onClick={() => setCategoryFilter(c.category)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter.toUpperCase() === c.category.toUpperCase() ? "bg-blue-600 border-blue-500 text-white" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${categoryFilter.toUpperCase() === c.category.toUpperCase() ? "bg-primary border-primary text-background" : "bg-card/80 border-border text-muted-foreground hover:text-foreground"}`}
                       >
                         {c.category}
                       </button>
@@ -640,17 +640,17 @@ export default function MPDashboard() {
 
                 {filteredSuggestions.length === 0 ? (
                   <div className="text-center py-20">
-                    <ShieldAlert className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                    <h4 className="font-bold text-slate-300">No suggestions match filters</h4>
-                    <p className="text-slate-500 text-sm mt-1">Try relaxing your search terms or selecting another category.</p>
+                    <ShieldAlert className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h4 className="font-bold text-foreground">No suggestions match filters</h4>
+                    <p className="text-muted-foreground text-sm mt-1">Try relaxing your search terms or selecting another category.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {filteredSuggestions.map((item) => (
-                      <div key={item.id} className="border border-white/5 bg-slate-900/10 rounded-2xl p-5 hover:border-white/10 transition flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                      <div key={item.id} className="border border-border bg-card/90 rounded-2xl p-5 hover:border-foreground/10 transition flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center flex-wrap gap-2.5">
-                            <h4 className="font-bold text-base text-white">{item.title}</h4>
+                            <h4 className="font-bold text-base text-foreground">{item.title}</h4>
                             {item.category && (
                               <span className="px-2.5 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-300 border border-blue-500/10">
                                 {item.category.name}
@@ -658,33 +658,33 @@ export default function MPDashboard() {
                             )}
                             {item.sentiment && (
                               <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${item.sentiment === "POSITIVE" ? "bg-emerald-500/10 text-emerald-400" :
-                                item.sentiment === "NEGATIVE" ? "bg-rose-500/10 text-rose-400" : "bg-slate-500/10 text-slate-400"
+                                item.sentiment === "NEGATIVE" ? "bg-rose-500/10 text-rose-400" : "bg-border/50 text-muted-foreground"
                                 }`}>
                                 {item.sentiment}
                               </span>
                             )}
                           </div>
 
-                          <p className="text-sm text-slate-400 line-clamp-2">{item.description || item.transcription || "No details provided"}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-2">{item.description || item.transcription || "No details provided"}</p>
 
-                          <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-slate-500">
+                          <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5 text-slate-600" />
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                               <span>{item.block?.name || "Patna Sadar"}, {item.village?.name || "Village"}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                               <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5 text-slate-600" />
+                              <Users className="w-3.5 h-3.5 text-muted-foreground" />
                               <span>By {item.user?.fullName || "Citizen"}</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Status / Priority Score */}
-                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-white/5">
+                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-border">
                           {getStatusBadge(item.status)}
 
                           {item.priorityScore && (
@@ -710,17 +710,17 @@ export default function MPDashboard() {
                 exit={{ opacity: 0, y: -15 }}
                 className="space-y-6"
               >
-                <div className="glass-panel rounded-3xl p-6 border border-white/5">
+                <div className="glass-panel rounded-3xl p-6 border border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-5 h-5 text-indigo-400" />
-                    <h3 className="font-bold text-lg text-white">AI-Powered Development Proposals</h3>
+                    <h3 className="font-bold text-lg text-foreground">AI-Powered Development Proposals</h3>
                   </div>
-                  <p className="text-xs text-slate-400">These recommendations are automatically generated by the JanSwar AI Engine using aggregated citizen request clusters and local infrastructure gaps.</p>
+                  <p className="text-xs text-muted-foreground">These recommendations are automatically generated by the JanSwar AI Engine using aggregated citizen request clusters and local infrastructure gaps.</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {recommendations.map((rec) => (
-                    <div key={rec.id} className="glass-panel rounded-3xl p-6 border border-white/5 flex flex-col justify-between gap-6 hover:border-white/10 transition relative">
+                    <div key={rec.id} className="glass-panel rounded-3xl p-6 border border-border flex flex-col justify-between gap-6 hover:border-foreground/10 transition relative bg-card/90">
                       <div className="absolute top-6 right-6 flex items-center gap-1.5 text-xs text-indigo-300 font-bold bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/10">
                         <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
                         Priority: {rec.priorityScore.toFixed(0)}/100
@@ -731,19 +731,19 @@ export default function MPDashboard() {
                           <span className="px-2.5 py-0.5 rounded-md text-[9px] uppercase font-bold bg-blue-500/10 text-blue-300 border border-blue-500/10">
                             {rec.category.name}
                           </span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {rec.block?.name || "Patna"}, {rec.village?.name || "Constituency"}
                           </span>
                         </div>
 
-                        <h4 className="font-extrabold text-base text-white pr-20">{rec.title}</h4>
-                        <p className="text-xs text-slate-400 leading-relaxed">{rec.description}</p>
+                        <h4 className="font-extrabold text-base text-foreground pr-20">{rec.title}</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{rec.description}</p>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                      <div className="flex items-center justify-between border-t border-border pt-4 mt-2">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-slate-400">Status:</span>
+                          <span className="text-muted-foreground">Status:</span>
                           {rec.status === "PENDING" && <span className="text-amber-400 font-bold">Awaiting Approval</span>}
                           {rec.status === "APPROVED" && <span className="text-blue-400 font-bold">Approved for Planning</span>}
                           {rec.status === "COMPLETED" && <span className="text-emerald-400 font-bold flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Project Completed</span>}
@@ -752,7 +752,7 @@ export default function MPDashboard() {
                         {rec.status === "PENDING" && (
                           <button
                             onClick={() => handleApproveRecommendation(rec.id)}
-                            className="flex items-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow shadow-blue-500/10 hover:shadow-blue-500/20 transition"
+                            className="flex items-center gap-1 px-4 py-2 bg-primary hover:bg-primary/90 text-background rounded-xl text-xs font-semibold shadow-lg shadow-primary/10 transition"
                           >
                             Approve Project
                           </button>
