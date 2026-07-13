@@ -27,12 +27,12 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function LoginPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const { login, signup, verifySignup, requestPasswordReset, isLoading, error, clearError, user } =
+  const { login, signup, verifySignup, requestPasswordReset, verifyPasswordReset, isLoading, error, clearError, user } =
     useAuthStore();
 
   // Mode state: LOGIN vs SIGNUP vs FORGOT_PASSWORD
   const [mode, setMode] = useState<"LOGIN" | "SIGNUP" | "FORGOT_PASSWORD">("LOGIN");
-  const [step, setStep] = useState<"FORM" | "OTP_VERIFY">("FORM");
+  const [step, setStep] = useState<"FORM" | "OTP_VERIFY" | "RESET_VERIFY">("FORM");
 
   // Form Fields
   const [email, setEmail] = useState("");
@@ -42,6 +42,7 @@ export default function LoginPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   // Password Visibility States
   const [showPassword, setShowPassword] = useState(false);
@@ -141,7 +142,32 @@ export default function LoginPage() {
 
     try {
       await requestPasswordReset(email);
-      alert(language === "hi" ? "रीसेट लिंक भेजा गया!" : "Reset link sent!");
+      setStep("RESET_VERIFY");
+    } catch (err) {
+      // Handled in store
+    }
+  };
+
+  const handleVerifyResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+    clearError();
+    if (!otp || !newPassword) return;
+
+    if (newPassword !== confirmPassword) {
+      setLocalError(
+        language === "hi"
+          ? "दोनों पासवर्ड मेल नहीं खाते हैं"
+          : "Passwords do not match"
+      );
+      return;
+    }
+
+    try {
+      await verifyPasswordReset(email, otp, newPassword);
+      alert(language === "hi" ? "पासवर्ड सफलतापूर्वक रीसेट किया गया!" : "Password reset successfully!");
+      setMode("LOGIN");
+      setStep("FORM");
     } catch (err) {
       // Handled in store
     }
@@ -244,8 +270,8 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleToggleMode("LOGIN")}
                 className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${mode === "LOGIN"
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-white"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 <span className="relative z-10">
@@ -263,8 +289,8 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleToggleMode("SIGNUP")}
                 className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${mode === "SIGNUP"
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-white"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 <span className="relative z-10">
@@ -328,7 +354,7 @@ export default function LoginPage() {
                   : mode === "FORGOT_PASSWORD"
                     ? language === "hi"
                       ? "अपना ईमेल दर्ज करें और हम आपको एक रीसेट लिंक भेजेंगे"
-                      : "Enter your email and we'll send you a reset link"
+                      : "Enter your email and we'll send you a reset code"
                     : mode === "LOGIN"
                       ? t("login.desc")
                       : language === "hi"
@@ -464,7 +490,7 @@ export default function LoginPage() {
                       >
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                         <span>
-                          {language === "hi" ? "रीसेट लिंक भेजें" : "Send Reset Link"}
+                          {language === "hi" ? "रीसेट लिंक भेजें" : "Send Reset code"}
                         </span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
@@ -656,7 +682,7 @@ export default function LoginPage() {
                     </form>
                   )}
                 </motion.div>
-              ) : (
+              ) : step === "OTP_VERIFY" ? (
                 /* ================= OTP VERIFICATION ================= */
                 <motion.div
                   key="otp-step"
@@ -718,6 +744,111 @@ export default function LoginPage() {
                         {language === "hi"
                           ? "वापस विवरण बदलें"
                           : "Change Register Details"}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              ) : (
+                /* ================= RESET PASSWORD VERIFICATION ================= */
+                <motion.div
+                  key="reset-verify-step"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <form onSubmit={handleVerifyResetSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 text-center">
+                        {t("login.otpLabel")}
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
+                        <input
+                          type="text"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          className="w-full bg-background/50 border border-border/80 rounded-2xl py-3.5 pl-12 pr-4 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-center text-lg tracking-[0.5em] font-extrabold focus:border-transparent transition-all"
+                          placeholder={t("login.otpPlaceholder")}
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-4 text-center font-medium leading-relaxed">
+                        {language === "hi"
+                          ? `हमने ${email} पर एक रीसेट कोड भेजा है।`
+                          : `We sent a reset code to ${email}.`}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {language === "hi" ? "नया पासवर्ड" : "New Password"}
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                            placeholder={language === "hi" ? "नया पासवर्ड दर्ज करें" : "Enter new password"}
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-3.5 hover:text-foreground text-muted-foreground/80 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {language === "hi" ? "पासवर्ड पुष्टि करें" : "Confirm Password"}
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                            placeholder={language === "hi" ? "पुष्टि करें" : "Confirm"}
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-4 top-3.5 hover:text-foreground text-muted-foreground/80 transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || !otp || !newPassword || !confirmPassword}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-2xl py-3.5 font-bold text-sm flex justify-center items-center gap-2 transition shadow-lg shadow-emerald-600/20 hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      <span>
+                        {language === "hi" ? "पासवर्ड रीसेट करें" : "Reset Password"}
+                      </span>
+                    </button>
+
+                    <div className="text-center mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setStep("FORM")}
+                        className="text-xs font-bold text-primary hover:underline"
+                      >
+                        {language === "hi" ? "वापस जाएँ" : "Go Back"}
                       </button>
                     </div>
                   </form>
