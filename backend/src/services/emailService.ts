@@ -1,16 +1,9 @@
-import * as brevo from "@getbrevo/brevo";
 import fs from "fs";
 import path from "path";
 import handlebars from "handlebars";
 
 const brevoApiKey = process.env.BREVO_API_KEY || "";
 const brevoFromEmail = process.env.BREVO_FROM_EMAIL || "info@janswar.com";
-
-let apiInstance: brevo.TransactionalEmailsApi | null = null;
-if (brevoApiKey) {
-  apiInstance = new brevo.TransactionalEmailsApi();
-  apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
-}
 
 // Read and compile the Handlebars template
 const templatePath = path.join(__dirname, "../templates/otp-email.hbs");
@@ -24,7 +17,7 @@ const compiledTemplate = handlebars.compile(templateSource);
  * @param purpose 'login' or 'signup'
  */
 export async function sendOtpEmail(email: string, otp: string, purpose: "login" | "signup"): Promise<void> {
-  if (!apiInstance) {
+  if (!brevoApiKey) {
     console.warn("[EmailService] No BREVO_API_KEY provided. Skipping actual email dispatch.");
     return;
   }
@@ -39,17 +32,31 @@ export async function sendOtpEmail(email: string, otp: string, purpose: "login" 
       year: new Date().getFullYear()
     });
 
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
-    sendSmtpEmail.subject = `JanSwar AI - Verification Code: ${otp}`;
-    sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { name: "JanSwar AI", email: brevoFromEmail };
-    sendSmtpEmail.to = [{ email: email }];
+    // We use native fetch to call the Brevo v3 API directly, bypassing the broken v6.0.2 SDK typings.
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: "JanSwar AI", email: brevoFromEmail },
+        to: [{ email: email }],
+        subject: `JanSwar AI - Verification Code: ${otp}`,
+        htmlContent: htmlContent
+      })
+    });
 
-    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(JSON.stringify(errorData));
+    }
     
-    console.log(`[EmailService] OTP email sent successfully to ${email} via Brevo. ID: ${data.body.messageId}`);
+    const data = await response.json() as { messageId: string };
+    console.log(`[EmailService] OTP email sent successfully to ${email} via Brevo. Message ID: ${data.messageId}`);
   } catch (error: any) {
-    console.error("[EmailService] Failed to send OTP email via Brevo:", error.response?.body || error);
+    console.error("[EmailService] Failed to send OTP email via Brevo REST API:", error.message || error);
     throw new Error("Email sending failed");
   }
 }
