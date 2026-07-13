@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to JanSwar AI</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .email-wrapper {
+      width: 100%;
+      max-width: 100%;
+      background-color: #f8fafc;
+      padding: 30px 15px;
+    }
+
+    .email-container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+    }
+
+    .email-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .logo-img {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+    }
+
+    .header-title {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .header-subtitle {
+      color: #93c5fd;
+      font-size: 14px;
+      margin: 8px 0 0 0;
+      font-weight: 500;
+    }
+
+    .email-body {
+      padding: 40px 30px;
+      color: #334155;
+    }
+
+    .greeting {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 0;
+      color: #0f172a;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .message {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #475569;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .feature-list {
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 30px 0;
+      text-align: left;
+    }
+
+    .feature-item {
+      margin-bottom: 12px;
+      font-size: 15px;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .feature-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .btn-container {
+      text-align: center;
+      margin: 35px 0 10px 0;
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: #1e40af;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.3);
+      border: 1px solid #1e3a8a;
+    }
+
+    .email-footer {
+      background-color: #f8fafc;
+      padding: 25px 20px;
+      text-align: center;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: #94a3b8;
+      margin: 0 0 5px 0;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="email-wrapper">
+    <div class="email-container">
+      <div class="email-header">
+        <img src="https://jan-swar-ai.vercel.app/JS_logo.png" alt="JanSwar AI Logo" class="logo-img">
+        <h1 class="header-title">Account Created!</h1>
+        <p class="header-subtitle">Welcome to the Future of Governance</p>
+      </div>
+      <div class="email-body">
+        <p class="greeting">Welcome, {{fullName}}! 🎉</p>
+        <p class="message">
+          Your JanSwar AI account has been successfully created. We are thrilled to have you join our platform to bridge
+          the gap between citizens and policymakers.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature-item">✅ Report constituency issues instantly</div>
+          <div class="feature-item">✅ AI-powered complaint analysis</div>
+          <div class="feature-item">✅ Real-time tracking & transparency</div>
+          <div class="feature-item">✅ Direct communication with leaders</div>
+        </div>
+
+        <div class="btn-container">
+          <a href="{{loginUrl}}" class="btn">Explore more</a> to: <a href="https://jan-swar-ai.vercel.app/"
+            class="btn">Explore
+            more</a>
+        </div>
+      </div>
+      <div class="email-footer">
+        <p class="footer-text">&copy; {{year}} <a href="https://jan-swar-ai.vercel.app/"
+            style="color: #64748b; text-decoration: none; font-weight: 600;">JanSwar AI</a>. All rights reserved.</p>
+        <p class="footer-text">Bridging the gap between Citizens and Government at <a
+            href="https://jan-swar-ai.vercel.app/"
+            style="color: #64748b; text-decoration: underline;">https://jan-swar-ai.vercel.app/</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

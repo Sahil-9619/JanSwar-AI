@@ -22,6 +22,9 @@ interface AuthState {
   login: (email: string, pass: string) => Promise<void>;
   signup: (details: { fullName: string; email: string; pass: string; city: string; state: string; role: Role }) => Promise<void>;
   verifySignup: (email: string, otp: string) => Promise<void>;
+  resendOtp: (email: string, purpose: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  verifyPasswordReset: (email: string, otp: string, newPassword: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
@@ -108,6 +111,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err: any) {
       console.error("Failed to verify signup:", err.message);
       set({ isLoading: false, error: err.response?.data?.error || "Failed to verify signup OTP" });
+      throw err;
+    }
+  },
+
+  resendOtp: async (email: string, purpose: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/auth/resend-otp", { email, purpose });
+      set({ isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to resend OTP:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to resend OTP" });
+      throw err;
+    }
+  },
+
+  requestPasswordReset: async (email: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/auth/request-password-reset", { email });
+      set({ isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to request password reset:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to request password reset" });
+      throw err;
+    }
+  },
+
+  verifyPasswordReset: async (email: string, otp: string, newPassword: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/auth/verify-password-reset", { email, otp, newPassword });
+      set({ isLoading: false, error: null });
+    } catch (err: any) {
+      console.error("Failed to verify password reset:", err.message);
+      set({ isLoading: false, error: err.response?.data?.error || "Failed to verify password reset" });
       throw err;
     }
   },
