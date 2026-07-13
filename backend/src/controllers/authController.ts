@@ -3,6 +3,7 @@ import { prisma } from "../index";
 import jwt from "jsonwebtoken";
 import { Role } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { sendOtpEmail } from "../services/emailService";
 
 const otpStore = new Map<string, { 
   otp: string; 
@@ -32,6 +33,7 @@ export async function requestOtp(req: Request, res: Response) {
   console.log(`==========================\n\n`);
 
   try {
+    await sendOtpEmail(email, otp, "login");
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.error("Error sending OTP via email:", error);
@@ -148,6 +150,7 @@ export async function signup(req: Request, res: Response) {
     console.log(`[DEVELOPMENT] SIGNUP OTP for ${email}: ${otp}`);
     console.log(`==========================\n\n`);
 
+    await sendOtpEmail(email, otp, "signup");
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.error("Signup request error:", error);
