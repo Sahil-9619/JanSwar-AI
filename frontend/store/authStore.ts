@@ -134,7 +134,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false, error: null });
     } catch (err: any) {
       console.error("Failed to request password reset:", err.message);
-      set({ isLoading: false, error: err.response?.data?.error || "Failed to request password reset" });
+      let errorMessage = err.response?.data?.error || "Failed to request password reset";
+      if (err.response?.status === 404 || errorMessage.toLowerCase().includes("no account found")) {
+        errorMessage = "User doesn't exist";
+      }
+      set({ isLoading: false, error: errorMessage });
       throw err;
     }
   },
