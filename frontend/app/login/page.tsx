@@ -50,6 +50,7 @@ export default function LoginPage() {
 
   // Local Validation Errors
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localSuccess, setLocalSuccess] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function LoginPage() {
     setMode(selectedMode);
     setStep("FORM");
     setLocalError(null);
+    setLocalSuccess(null);
     clearError();
     setPassword("");
     setConfirmPassword("");
@@ -142,6 +144,7 @@ export default function LoginPage() {
 
     try {
       await requestPasswordReset(email);
+      setLocalSuccess(language === "hi" ? "रीसेट लिंक भेजा गया!" : "Reset link sent!");
       setStep("RESET_VERIFY");
     } catch (err) {
       // Handled in store
@@ -165,7 +168,7 @@ export default function LoginPage() {
 
     try {
       await verifyPasswordReset(email, otp, newPassword);
-      alert(language === "hi" ? "पासवर्ड सफलतापूर्वक रीसेट किया गया!" : "Password reset successfully!");
+      setLocalSuccess(language === "hi" ? "पासवर्ड सफलतापूर्वक रीसेट किया गया!" : "Password reset successfully!");
       setMode("LOGIN");
       setStep("FORM");
     } catch (err) {
@@ -372,6 +375,19 @@ export default function LoginPage() {
                     setLocalError(null);
                     clearError();
                   }}
+                  className="hover:opacity-85 text-sm p-1"
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            {/* Success Message Box */}
+            {localSuccess && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-4 rounded-2xl text-xs font-semibold mb-6 flex items-center justify-between animate-fadeIn">
+                <span>{localSuccess}</span>
+                <button
+                  onClick={() => setLocalSuccess(null)}
                   className="hover:opacity-85 text-sm p-1"
                 >
                   &times;
