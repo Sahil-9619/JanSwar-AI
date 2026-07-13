@@ -27,11 +27,11 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function LoginPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const { login, signup, verifySignup, isLoading, error, clearError, user } =
+  const { login, signup, verifySignup, requestPasswordReset, isLoading, error, clearError, user } =
     useAuthStore();
 
-  // Mode state: LOGIN vs SIGNUP
-  const [mode, setMode] = useState<"LOGIN" | "SIGNUP">("LOGIN");
+  // Mode state: LOGIN vs SIGNUP vs FORGOT_PASSWORD
+  const [mode, setMode] = useState<"LOGIN" | "SIGNUP" | "FORGOT_PASSWORD">("LOGIN");
   const [step, setStep] = useState<"FORM" | "OTP_VERIFY">("FORM");
 
   // Form Fields
@@ -66,7 +66,7 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleToggleMode = (selectedMode: "LOGIN" | "SIGNUP") => {
+  const handleToggleMode = (selectedMode: "LOGIN" | "SIGNUP" | "FORGOT_PASSWORD") => {
     setMode(selectedMode);
     setStep("FORM");
     setLocalError(null);
@@ -128,6 +128,20 @@ export default function LoginPage() {
 
     try {
       await verifySignup(email, otp);
+    } catch (err) {
+      // Handled in store
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+    clearError();
+    if (!email) return;
+
+    try {
+      await requestPasswordReset(email);
+      alert(language === "hi" ? "रीसेट लिंक भेजा गया!" : "Reset link sent!");
     } catch (err) {
       // Handled in store
     }
@@ -229,11 +243,10 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleToggleMode("LOGIN")}
-                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${
-                  mode === "LOGIN"
+                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${mode === "LOGIN"
                     ? "text-white"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <span className="relative z-10">
                   {language === "hi" ? "लॉग इन" : "Login"}
@@ -249,11 +262,10 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleToggleMode("SIGNUP")}
-                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${
-                  mode === "SIGNUP"
+                className={`flex-1 py-2 text-xs font-bold rounded-full transition-all relative ${mode === "SIGNUP"
                     ? "text-white"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <span className="relative z-10">
                   {language === "hi" ? "साइन अप" : "Sign Up"}
@@ -285,6 +297,13 @@ export default function LoginPage() {
                         : "Verify Your Email"}
                     </span>
                   </>
+                ) : mode === "FORGOT_PASSWORD" ? (
+                  <>
+                    <KeyRound className="w-5 h-5 text-indigo-500" />
+                    <span>
+                      {language === "hi" ? "पासवर्ड भूल गए" : "Forgot Password"}
+                    </span>
+                  </>
                 ) : mode === "LOGIN" ? (
                   <>
                     <Lock className="w-5 h-5 text-primary" />
@@ -306,11 +325,15 @@ export default function LoginPage() {
                   ? language === "hi"
                     ? `हमने ${email} पर एक सत्यापन कोड भेजा है।`
                     : `We sent an OTP to ${email}.`
-                  : mode === "LOGIN"
-                    ? t("login.desc")
-                    : language === "hi"
-                      ? "सांसद से जुड़ने के लिए आवश्यक जानकारी भरें"
-                      : "Fill details to connect directly with your representative"}
+                  : mode === "FORGOT_PASSWORD"
+                    ? language === "hi"
+                      ? "अपना ईमेल दर्ज करें और हम आपको एक रीसेट लिंक भेजेंगे"
+                      : "Enter your email and we'll send you a reset link"
+                    : mode === "LOGIN"
+                      ? t("login.desc")
+                      : language === "hi"
+                        ? "सांसद से जुड़ने के लिए आवश्यक जानकारी भरें"
+                        : "Fill details to connect directly with your representative"}
               </p>
             </div>
 
@@ -365,6 +388,13 @@ export default function LoginPage() {
                           <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             {language === "hi" ? "पासवर्ड" : "Password"}
                           </label>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleMode("FORGOT_PASSWORD")}
+                            className="text-xs font-bold text-primary hover:underline"
+                          >
+                            {language === "hi" ? "पासवर्ड भूल गए?" : "Forgot Password?"}
+                          </button>
                         </div>
                         <div className="relative">
                           <Lock className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
@@ -407,6 +437,47 @@ export default function LoginPage() {
                         </span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
+                    </form>
+                  ) : mode === "FORGOT_PASSWORD" ? (
+                    /* ================= FORGOT PASSWORD FORM ================= */
+                    <form className="space-y-5" onSubmit={handleForgotPasswordSubmit}>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {t("login.emailLabel")}
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-3.5 w-5 h-5 text-muted-foreground/80" />
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full bg-background/50 border border-border/80 rounded-2xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all"
+                            placeholder={t("login.emailPlaceholder")}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLoading || !email}
+                        className="w-full bg-primary hover:opacity-90 disabled:opacity-50 text-white rounded-2xl py-3.5 font-bold text-sm flex justify-center items-center gap-2 transition shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] mt-6"
+                      >
+                        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        <span>
+                          {language === "hi" ? "रीसेट लिंक भेजें" : "Send Reset Link"}
+                        </span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+
+                      <div className="text-center mt-4">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleMode("LOGIN")}
+                          className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          {language === "hi" ? "लॉग इन पर वापस जाएँ" : "Back to Login"}
+                        </button>
+                      </div>
                     </form>
                   ) : (
                     /* ================= SIGNUP FORM ================= */
@@ -631,7 +702,14 @@ export default function LoginPage() {
                       </span>
                     </button>
 
-                    <div className="text-center mt-4">
+                    <div className="text-center mt-4 flex flex-col gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); /* TODO: Implement resend OTP */ }}
+                        className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline"
+                      >
+                        {language === "hi" ? "ओटीपी दोबारा भेजें" : "Resend OTP"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => setStep("FORM")}

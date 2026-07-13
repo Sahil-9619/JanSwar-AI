@@ -118,9 +118,9 @@ const welcomeTemplateSource = `<!DOCTYPE html>
     </div>
   </div>
 </body>
-</html>\`;
+</html>`;
 
-const passwordChangedTemplateSource = \`<!DOCTYPE html>
+const passwordChangedTemplateSource = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -172,7 +172,7 @@ const passwordChangedTemplateSource = \`<!DOCTYPE html>
     </div>
   </div>
 </body>
-</html>\`;
+</html>`;
 
 const compiledOtpTemplate = handlebars.compile(otpTemplateSource);
 const compiledWelcomeTemplate = handlebars.compile(welcomeTemplateSource);
