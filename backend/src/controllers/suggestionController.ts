@@ -74,7 +74,7 @@ export async function createSuggestion(req: Request, res: Response) {
       if (files["audio"] && files["audio"][0]) {
         const audioFile = files["audio"][0];
         const result = await uploadFile(audioFile.path, "audio", "video");
-        
+
         const media = await prisma.suggestionMedia.create({
           data: {
             suggestionId: suggestion.id,
@@ -90,7 +90,7 @@ export async function createSuggestion(req: Request, res: Response) {
       if (files["image"] && files["image"][0]) {
         const imageFile = files["image"][0];
         const result = await uploadFile(imageFile.path, "images", "image");
-        
+
         const media = await prisma.suggestionMedia.create({
           data: {
             suggestionId: suggestion.id,
@@ -106,7 +106,7 @@ export async function createSuggestion(req: Request, res: Response) {
       if (files["document"] && files["document"][0]) {
         const docFile = files["document"][0];
         const result = await uploadFile(docFile.path, "documents", "raw");
-        
+
         const media = await prisma.suggestionMedia.create({
           data: {
             suggestionId: suggestion.id,
@@ -264,7 +264,7 @@ export async function getSuggestionById(req: Request, res: Response) {
  */
 async function triggerAIServicePipeline(suggestionId: string) {
   console.log(`[AI Ingestion Log] Triggering microservice pipeline for suggestion: ${suggestionId}`);
-  
+
   // Update status to processing
   await prisma.suggestion.update({
     where: { id: suggestionId },
@@ -296,7 +296,7 @@ async function triggerAIServicePipeline(suggestionId: string) {
     console.log(`[AI Ingestion Log] Microservice acknowledged suggestion: ${suggestionId}. Response:`, response.data);
   } catch (error: any) {
     console.error(`[AI Ingestion Log] Microservice request failed for suggestion: ${suggestionId}.`, error.message);
-    
+
     // If microservice is offline or fails, fallback to standard mock AI analysis so system behaves correctly
     await runMockAIPipeline(suggestionId);
   }
@@ -345,14 +345,14 @@ async function runMockAIPipeline(suggestionId: string) {
   // Calculate Priority Score (0-100 breakdown)
   const population = suggestion.village?.population || 1000;
   const infraGap = suggestion.village?.infrastructureGap || 0.5;
-  
+
   // Weights formulas
   const citizenDemandWeight = 30.0; // Simulated demand density
   const populationWeight = Math.min(25.0, (population / 20000) * 25.0);
   const gapWeight = infraGap * 25.0; // Up to 25.0
   const urgencyWeight = 10.0;
   const budgetWeight = 5.0;
-  
+
   const finalScore = Math.min(100.0, citizenDemandWeight + populationWeight + gapWeight + urgencyWeight + budgetWeight);
 
   await prisma.priorityScore.upsert({

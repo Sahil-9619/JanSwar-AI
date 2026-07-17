@@ -22,9 +22,33 @@ function verifyInternalSecret(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+import { prisma } from "../index";
+
 router.post("/", authenticateToken, suggestionUpload, handleUploadError, createSuggestion);
 router.get("/", authenticateToken, getSuggestions);
 router.get("/:id", authenticateToken, getSuggestionById);
 router.patch("/:id/ai-complete", verifyInternalSecret, updateSuggestionAI);
+
+// Allow MP / Admin to update suggestion status
+router.patch("/:id/status", authenticateToken, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || !["PENDING", "PROCESSING", "ANALYZED", "APPROVED", "REJECTED"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status update. Must be PENDING, PROCESSING, ANALYZED, APPROVED, or REJECTED." });
+  }
+
+  try {
+    const updatedSuggestion = await prisma.suggestion.update({
+      where: { id },
+      data: { status: status as any }
+    });
+
+    res.status(200).json({ suggestion: updatedSuggestion });
+  } catch (err) {
+    console.error("Failed to update suggestion status:", err);
+    res.status(500).json({ error: "Failed to update suggestion status" });
+  }
+});
 
 export default router;
