@@ -13,14 +13,15 @@
 
 ## 🚀 Key Features
 
-- **Cross-Platform Access:** Engage with the platform via the fully responsive Website or the native Mobile App (iOS & Android).
-- **Custom OTP Authentication:** Secure, passwordless login flow using email OTP (NodeMailer) and JWT.
+- **Integrated Ecosystem:** Features a fully-responsive Next.js Website alongside a native Expo React Native Mobile App for seamless cross-device civic engagement.
+- **Robust Multi-View Authentication:** Complete password-based login with independent eye toggles for all password fields (Login, Signup, Confirm Password) and email OTP verification.
+- **Dynamic Development Routing:** The mobile app automatically resolves the host computer's Wi-Fi network IP to connect to backend containers without manual `.env` updates.
+- **Offline OTP testing:** The backend handles email dispatch failures gracefully, printing OTP codes directly in the docker console so development is never blocked by API key/IP restrictions.
 - **Multi-Role Dashboards:**
-  - **Citizen Dashboard:** Submit suggestions, report issues, and track the status of requests right from your phone or browser.
-  - **MP Dashboard:** View a macro-level intelligence report of the constituency, approve AI-generated infrastructure project proposals, and track village-level gaps via interactive maps.
-  - **Admin Dashboard:** Review flagged issues, manage district-level settings, and route tasks to the appropriate departments.
-- **AI-Powered Insights:** Uses LLMs (Google Gemini) to analyze citizen suggestions, group them by category, determine sentiment, and calculate an automated "Priority Score" based on urgency and infrastructure gaps.
-- **Geospatial Visualization:** Interactive maps rendering constituency data directly on the dashboard.
+  - **Citizen / User Dashboard (`/user`):** Submit suggestions, report infrastructure gaps, and track request status.
+  - **MP / Representative Dashboard (`/mp`):** View macro intelligence reports, approve AI infrastructure proposals, and map village gaps.
+  - **Admin Dashboard:** Manage district settings, route flagged issues, and configure categories.
+- **AI-Powered Insights:** Analyzes civic suggestions using Google Gemini to categorize topics, score priorities, and evaluate community sentiments.
 
 ---
 

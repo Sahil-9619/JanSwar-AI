@@ -2,23 +2,23 @@ import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Home, Compass } from 'lucide-react-native';
 
-import { Colors } from '@/constants/theme';
+import { lightColors, darkColors } from '../context/ThemeContext';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const colors = scheme === 'dark' ? darkColors : lightColors;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#0f172a', borderTopWidth: 1, borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarStyle: { backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.cardBorder },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '700' }
       }}>
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
@@ -26,15 +26,7 @@ export default function AppTabs() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, size }) => (
-            <Compass size={size} color={color} />
-          ),
-        }}
-      />
+
     </Tabs>
   );
 }
